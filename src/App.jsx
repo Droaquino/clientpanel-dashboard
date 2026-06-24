@@ -691,7 +691,10 @@ function ProcEditForm({ data, onChange, onSave, onCancel, isNew, consultores, co
         </div>
         <div>
           <label style={labelSt}>Área do processo <span style={{ color:'#E24B4A' }}>*</span></label>
-          <input style={inputSt} value={data.area} placeholder="Ex: Comercial, RH" onChange={e => onChange({ ...data, area:e.target.value })} />
+          <input list="area-list" style={inputSt} value={data.area} placeholder="Ex: Comercial, RH" onChange={e => onChange({ ...data, area:e.target.value })} />
+          <datalist id="area-list">
+            {[...new Set(colaboradores.map(c => c.cargo).filter(Boolean))].map(c => <option key={c} value={c} />)}
+          </datalist>
         </div>
         <div>
           <label style={labelSt}>Formato do processo</label>
@@ -704,7 +707,7 @@ function ProcEditForm({ data, onChange, onSave, onCancel, isNew, consultores, co
           {colaboradores.length > 0
             ? <select style={{ ...inputSt, cursor:'pointer' }} value={data.comQuem} onChange={e => onChange({ ...data, comQuem:e.target.value })}>
                 <option value="">Selecione um colaborador</option>
-                {colaboradores.map(c => <option key={c.id} value={c.nome}>{c.nome} {c.cargo ? `— ${c.cargo}` : ''}</option>)}
+                {colaboradores.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
               </select>
             : <input style={inputSt} value={data.comQuem} placeholder="Ex: Gerência Comercial" onChange={e => onChange({ ...data, comQuem:e.target.value })} />
           }
@@ -714,7 +717,7 @@ function ProcEditForm({ data, onChange, onSave, onCancel, isNew, consultores, co
           {consultores.length > 0
             ? <select style={{ ...inputSt, cursor:'pointer' }} value={data.consultor} onChange={e => onChange({ ...data, consultor:e.target.value })}>
                 <option value="">Selecione um consultor</option>
-                {consultores.map(c => <option key={c.id} value={c.nome}>{c.nome} {c.especialidade ? `— ${c.especialidade}` : ''}</option>)}
+                {consultores.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
               </select>
             : <input style={inputSt} value={data.consultor} placeholder="Ex: Ana Lima" onChange={e => onChange({ ...data, consultor:e.target.value })} />
           }
