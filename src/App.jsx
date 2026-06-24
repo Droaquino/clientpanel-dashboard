@@ -39,7 +39,10 @@ const STAGE_KEYS = [
   { key:'analise',     label:'Análise Crítica' },
 ]
 
-const FORMATO_OPTS = ['BPMN','Fluxograma','Swimlane','Narrativo','Procedimento Operacional','Não definido']
+const FORMATO_OPTS = [
+  'POP - Procedimento Operacional Padrão',
+  'Fluxograma',
+]
 
 const getPct = p =>
   Math.round(STAGE_KEYS.filter(s => p[s.key]).length / STAGE_KEYS.length * 100)
@@ -47,6 +50,9 @@ const getPct = p =>
 const emptyStages = { coleta:false, modelagem:false, valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false }
 
 // ─── Seed data ────────────────────────────────────────────────
+let nextMeetingId = 8
+let nextProcId    = 11
+
 const initMeetings = [
   { id:1, title:'Kick-off do Sprint',      who:'Pedro + Equipe',    day:0, sh:9,  sm:0,  eh:10, em:0,  ci:0, canceled:false },
   { id:2, title:'Review de Requisitos',    who:'Coordenação',       day:1, sh:14, sm:0,  eh:15, em:0,  ci:1, canceled:false },
@@ -58,31 +64,30 @@ const initMeetings = [
 ]
 
 const initProcesses = [
-  { id:1,  num:1,  nome:'Emissão de Pacotes Turísticos', comQuem:'Gerência Comercial',       consultor:'Ana Lima',   formato:'BPMN',
+  { id:1,  num:1,  nome:'Emissão de Pacotes Turísticos', area:'Comercial',   comQuem:'Gerência Comercial',       consultor:'Ana Lima',   formato:'Fluxograma',
     coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
-  { id:2,  num:2,  nome:'Atendimento e Reservas',         comQuem:'Central de Atendimento',  consultor:'Carlos M.',  formato:'Fluxograma',
+  { id:2,  num:2,  nome:'Atendimento e Reservas',         area:'Atendimento', comQuem:'Central de Atendimento',  consultor:'Carlos M.',  formato:'POP - Procedimento Operacional Padrão',
     coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:true,  valCliente:true,  corrCliente:true,  analise:false, confirmed:false },
-  { id:3,  num:3,  nome:'Controle Financeiro',            comQuem:'Beatriz S. — Financeiro', consultor:'Ana Lima',   formato:'Swimlane',
+  { id:3,  num:3,  nome:'Controle Financeiro',            area:'Financeiro',  comQuem:'Beatriz S. — Financeiro', consultor:'Ana Lima',   formato:'Fluxograma',
     coleta:true,  modelagem:false, valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
-  { id:4,  num:4,  nome:'Gestão de Fornecedores',         comQuem:'Rodrigo T. — Compras',    consultor:'Carlos M.',  formato:'Narrativo',
+  { id:4,  num:4,  nome:'Gestão de Fornecedores',         area:'Compras',     comQuem:'Rodrigo T. — Compras',    consultor:'Carlos M.',  formato:'POP - Procedimento Operacional Padrão',
     coleta:true,  modelagem:true,  valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
-  { id:5,  num:5,  nome:'Recrutamento & Seleção',         comQuem:'Mariana L. — RH',         consultor:'Ana Lima',   formato:'Não definido',
+  { id:5,  num:5,  nome:'Recrutamento & Seleção',         area:'RH',          comQuem:'Mariana L. — RH',         consultor:'Ana Lima',   formato:'Fluxograma',
     coleta:false, modelagem:false, valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
-  { id:6,  num:6,  nome:'Marketing Digital',              comQuem:'Felipe A. — Marketing',   consultor:'Carlos M.',  formato:'BPMN',
+  { id:6,  num:6,  nome:'Marketing Digital',              area:'Marketing',   comQuem:'Felipe A. — Marketing',   consultor:'Carlos M.',  formato:'Fluxograma',
     coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:true,  valCliente:false, corrCliente:false, analise:false, confirmed:false },
-  { id:7,  num:7,  nome:'Controle de Vendas',             comQuem:'Sofia R. — Comercial',    consultor:'Ana Lima',   formato:'Fluxograma',
+  { id:7,  num:7,  nome:'Controle de Vendas',             area:'Comercial',   comQuem:'Sofia R. — Comercial',    consultor:'Ana Lima',   formato:'POP - Procedimento Operacional Padrão',
     coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:true,  valCliente:true,  corrCliente:true,  analise:true,  confirmed:true  },
-  { id:8,  num:8,  nome:'Onboarding de Colaboradores',    comQuem:'Mariana L. — RH',         consultor:'Carlos M.',  formato:'Procedimento Operacional',
+  { id:8,  num:8,  nome:'Onboarding de Colaboradores',    area:'RH',          comQuem:'Mariana L. — RH',         consultor:'Carlos M.',  formato:'POP - Procedimento Operacional Padrão',
     coleta:true,  modelagem:true,  valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
-  { id:9,  num:9,  nome:'Gestão de Transportes',          comQuem:'ainda vamos ver',         consultor:'Ana Lima',   formato:'Não definido',
+  { id:9,  num:9,  nome:'Gestão de Transportes',          area:'Operações',   comQuem:'ainda vamos ver',         consultor:'Ana Lima',   formato:'Fluxograma',
     coleta:false, modelagem:false, valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
-  { id:10, num:10, nome:'Relatórios Gerenciais',          comQuem:'Gerência Geral',          consultor:'Carlos M.',  formato:'Narrativo',
+  { id:10, num:10, nome:'Relatórios Gerenciais',          area:'Gerência',    comQuem:'Gerência Geral',          consultor:'Carlos M.',  formato:'Fluxograma',
     coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
 ]
 
 const fmt2 = n => String(n).padStart(2, '0')
 
-// ─── Shared input style ───────────────────────────────────────
 const inputSt = {
   width:'100%', padding:'6px 10px', fontSize:13,
   border:'0.5px solid #ccc', borderRadius:7,
@@ -232,7 +237,85 @@ function WeekCalendar({ meetings, onCancel }) {
   )
 }
 
-// ─── Process Edit Form (inline) ───────────────────────────────
+// ─── Schedule Form (inline inside ProcCard) ───────────────────
+function ScheduleForm({ processName, defaultWho, onSave, onCancel }) {
+  const [day,   setDay]   = useState(0)
+  const [start, setStart] = useState('09:00')
+  const [end,   setEnd]   = useState('10:00')
+  const [who,   setWho]   = useState(defaultWho)
+
+  function handleSave() {
+    const [sh, sm] = start.split(':').map(Number)
+    const [eh, em] = end.split(':').map(Number)
+    if (eh * 60 + em <= sh * 60 + sm) return
+    onSave({ day, sh, sm, eh, em, who })
+  }
+
+  const [sh, sm] = start.split(':').map(Number)
+  const [eh, em] = end.split(':').map(Number)
+  const valid = who.trim() && (eh * 60 + em > sh * 60 + sm)
+
+  return (
+    <div style={{ marginTop:10, padding:'10px 12px', background:'#F0F7F3', border:`1px solid ${BRAND_BRD}`, borderRadius:10 }}>
+      <div style={{ fontSize:11, fontWeight:500, color:BRAND, marginBottom:10 }}>
+        📅 Agendar reunião — <span style={{ fontWeight:400, color:BRAND_MID }}>{processName}</span>
+      </div>
+
+      {/* Day selector */}
+      <div style={{ marginBottom:10 }}>
+        <div style={labelSt}>Dia da semana</div>
+        <div style={{ display:'flex', gap:5 }}>
+          {DAYS_HDR.map((d, i) => (
+            <button key={i} onClick={() => setDay(i)} style={{
+              flex:1, padding:'5px 0', fontSize:11, fontWeight: day===i ? 500 : 400,
+              border:`0.5px solid ${day===i ? BRAND : '#ccc'}`,
+              borderRadius:6, cursor:'pointer',
+              background: day===i ? BRAND : '#fff',
+              color: day===i ? '#fff' : '#666',
+            }}>{d.short}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Times + participant */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:10 }}>
+        <div>
+          <label style={labelSt}>Início</label>
+          <input type="time" value={start} onChange={e => setStart(e.target.value)}
+            style={{ ...inputSt, padding:'5px 8px' }} />
+        </div>
+        <div>
+          <label style={labelSt}>Término</label>
+          <input type="time" value={end} onChange={e => setEnd(e.target.value)}
+            style={{ ...inputSt, padding:'5px 8px', borderColor: !valid && who ? '#E24B4A' : '#ccc' }} />
+          {!valid && who && eh * 60 + em <= sh * 60 + sm &&
+            <div style={{ fontSize:9, color:'#E24B4A', marginTop:2 }}>Término deve ser após o início</div>}
+        </div>
+        <div>
+          <label style={labelSt}>Participante</label>
+          <input value={who} onChange={e => setWho(e.target.value)}
+            placeholder="Ex: Ana Lima" style={{ ...inputSt, padding:'5px 8px' }} />
+        </div>
+      </div>
+
+      <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
+        <button onClick={onCancel} style={{ fontSize:11, padding:'5px 12px', border:'0.5px solid #ccc', borderRadius:6, cursor:'pointer', background:'#fff', color:'#666' }}>
+          Cancelar
+        </button>
+        <button onClick={handleSave} style={{
+          fontSize:11, padding:'5px 14px', borderRadius:6, fontWeight:500,
+          border:`0.5px solid ${valid ? BRAND : '#ccc'}`,
+          background: valid ? BRAND : '#ccc', color:'#fff',
+          cursor: valid ? 'pointer' : 'not-allowed',
+        }}>
+          ✓ Adicionar à agenda
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Process Edit Form ────────────────────────────────────────
 function ProcEditForm({ data, onChange, onSave, onCancel, isNew }) {
   return (
     <div style={{ background: isNew ? '#FAFCFA' : '#f8fbf9', border:`1.5px solid ${BRAND_BRD}`, borderRadius:12, padding:'1.1rem 1.2rem', marginBottom:'.6rem' }}>
@@ -241,42 +324,32 @@ function ProcEditForm({ data, onChange, onSave, onCancel, isNew }) {
       </div>
 
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginBottom:'1rem' }}>
-        <div>
+        <div style={{ gridColumn:'1 / -1' }}>
           <label style={labelSt}>Nome do processo <span style={{ color:'#E24B4A' }}>*</span></label>
-          <input
-            style={inputSt}
-            value={data.nome}
-            placeholder="Ex: Gestão de Contratos"
-            onChange={e => onChange({ ...data, nome: e.target.value })}
-          />
+          <input style={inputSt} value={data.nome} placeholder="Ex: Gestão de Contratos"
+            onChange={e => onChange({ ...data, nome: e.target.value })} />
+        </div>
+        <div>
+          <label style={labelSt}>Área do processo <span style={{ color:'#E24B4A' }}>*</span></label>
+          <input style={inputSt} value={data.area} placeholder="Ex: Comercial, RH, Financeiro"
+            onChange={e => onChange({ ...data, area: e.target.value })} />
         </div>
         <div>
           <label style={labelSt}>Formato do processo</label>
-          <select
-            style={{ ...inputSt, cursor:'pointer' }}
-            value={data.formato}
-            onChange={e => onChange({ ...data, formato: e.target.value })}
-          >
+          <select style={{ ...inputSt, cursor:'pointer' }} value={data.formato}
+            onChange={e => onChange({ ...data, formato: e.target.value })}>
             {FORMATO_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
         </div>
         <div>
           <label style={labelSt}>Ator responsável (com quem coletar) <span style={{ color:'#E24B4A' }}>*</span></label>
-          <input
-            style={inputSt}
-            value={data.comQuem}
-            placeholder="Ex: Gerência Comercial"
-            onChange={e => onChange({ ...data, comQuem: e.target.value })}
-          />
+          <input style={inputSt} value={data.comQuem} placeholder="Ex: Gerência Comercial"
+            onChange={e => onChange({ ...data, comQuem: e.target.value })} />
         </div>
         <div>
           <label style={labelSt}>Consultor responsável <span style={{ color:'#E24B4A' }}>*</span></label>
-          <input
-            style={inputSt}
-            value={data.consultor}
-            placeholder="Ex: Ana Lima"
-            onChange={e => onChange({ ...data, consultor: e.target.value })}
-          />
+          <input style={inputSt} value={data.consultor} placeholder="Ex: Ana Lima"
+            onChange={e => onChange({ ...data, consultor: e.target.value })} />
         </div>
       </div>
 
@@ -285,12 +358,13 @@ function ProcEditForm({ data, onChange, onSave, onCancel, isNew }) {
           Cancelar
         </button>
         <button
-          onClick={() => data.nome.trim() && data.comQuem.trim() && data.consultor.trim() && onSave()}
+          onClick={() => data.nome.trim() && data.comQuem.trim() && data.consultor.trim() && data.area.trim() && onSave()}
           style={{
-            fontSize:12, padding:'6px 16px', border:`0.5px solid ${BRAND}`, borderRadius:7,
-            cursor: data.nome && data.comQuem && data.consultor ? 'pointer' : 'not-allowed',
-            background: data.nome && data.comQuem && data.consultor ? BRAND : '#ccc',
-            color:'#fff', fontWeight:500,
+            fontSize:12, padding:'6px 16px', borderRadius:7, fontWeight:500,
+            cursor: data.nome && data.comQuem && data.consultor && data.area ? 'pointer' : 'not-allowed',
+            border:`0.5px solid ${data.nome && data.comQuem && data.consultor && data.area ? BRAND : '#ccc'}`,
+            background: data.nome && data.comQuem && data.consultor && data.area ? BRAND : '#ccc',
+            color:'#fff',
           }}>
           {isNew ? '＋ Adicionar' : '✓ Salvar alterações'}
         </button>
@@ -299,7 +373,7 @@ function ProcEditForm({ data, onChange, onSave, onCancel, isNew }) {
   )
 }
 
-// ─── Delete Confirm Bar ───────────────────────────────────────
+// ─── Delete Confirm ───────────────────────────────────────────
 function DeleteConfirm({ nome, onConfirm, onCancel }) {
   return (
     <div style={{ background:'#FCEBEB', border:'0.5px solid #F7C1C1', borderRadius:12, padding:'1rem 1.2rem', marginBottom:'.6rem', display:'flex', alignItems:'center', gap:12 }}>
@@ -316,15 +390,20 @@ function DeleteConfirm({ nome, onConfirm, onCancel }) {
   )
 }
 
-// ─── Process Card (view mode) ─────────────────────────────────
-function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete }) {
+// ─── Process Card ─────────────────────────────────────────────
+function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting }) {
+  const [scheduling, setScheduling] = useState(false)
   const pct      = getPct(p)
   const ready    = pct === 100 && !p.confirmed
   const barColor = pct === 100 ? BRAND : pct >= 70 ? BRAND_MID : pct >= 40 ? ACCENT : '#E24B4A'
 
-  const formatBadge = p.formato && p.formato !== 'Não definido'
-    ? <span style={{ fontSize:9, padding:'2px 7px', borderRadius:99, background:'#f0f0f0', color:'#888', marginLeft:6, verticalAlign:'middle' }}>{p.formato}</span>
-    : null
+  function handleScheduleSave(data) {
+    onAddMeeting({ title: p.nome, ...data, ci: (p.id - 1) % 5 })
+    setScheduling(false)
+  }
+
+  // Format label shortened for badge
+  const fmtShort = p.formato === 'Fluxograma' ? 'Fluxograma' : 'POP'
 
   return (
     <div style={{
@@ -340,11 +419,17 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete }) {
 
         <div style={{ minWidth:0 }}>
           <div style={{ fontSize:14, fontWeight:500, color:'#111', lineHeight:1.3, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
-            {p.nome}{formatBadge}
+            {p.nome}
           </div>
-          <div style={{ fontSize:11, color:'#888', marginTop:3, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+          {/* Área + Formato badges */}
+          <div style={{ display:'flex', gap:5, marginTop:4, flexWrap:'wrap' }}>
+            {p.area && <span style={{ fontSize:9, padding:'2px 7px', borderRadius:99, background:BRAND_LIGHT, color:BRAND_MID, fontWeight:500 }}>{p.area}</span>}
+            {p.formato && <span style={{ fontSize:9, padding:'2px 7px', borderRadius:99, background:'#f0f0f0', color:'#777' }}>{fmtShort}</span>}
+          </div>
+          <div style={{ fontSize:11, color:'#888', marginTop:4, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
             👤 {p.comQuem} · Consultor: {p.consultor}
           </div>
+          {/* Progress bar */}
           <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:7 }}>
             <div style={{ flex:1, height:5, background:'#eee', borderRadius:99, overflow:'hidden' }}>
               <div style={{ height:'100%', width:`${pct}%`, background:barColor, borderRadius:99, transition:'width .4s' }} />
@@ -355,8 +440,18 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete }) {
         </div>
 
         {/* Action buttons */}
-        <div style={{ display:'flex', flexDirection:'column', gap:4, alignItems:'flex-end' }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:5, alignItems:'flex-end' }}>
           <div style={{ display:'flex', gap:5 }}>
+            {/* Schedule button */}
+            <button
+              onClick={() => setScheduling(s => !s)}
+              title="Agendar reunião para este processo"
+              style={{
+                fontSize:11, padding:'4px 9px', borderRadius:6, cursor:'pointer',
+                border: scheduling ? `0.5px solid ${BRAND_MID}` : '0.5px solid #d0d0d0',
+                background: scheduling ? BRAND_LIGHT : '#fff',
+                color: scheduling ? BRAND : '#555',
+              }}>📅</button>
             {!p.confirmed && (
               <button onClick={() => onEdit(p)} title="Editar processo" style={{
                 fontSize:11, padding:'4px 9px', border:'0.5px solid #d0d0d0', borderRadius:6,
@@ -369,16 +464,14 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete }) {
                 cursor:'pointer', background:'#fff', color:'#A32D2D',
               }}>🗑</button>
             )}
-            <button
-              onClick={() => ready && onConfirm(p.id)}
-              style={{
-                fontSize:11, padding:'5px 11px', borderRadius:7, whiteSpace:'nowrap',
-                cursor: ready ? 'pointer' : 'default',
-                border: p.confirmed ? `0.5px solid ${BRAND_BRD}` : ready ? `0.5px solid ${BRAND}` : '0.5px solid #ddd',
-                background: p.confirmed ? BRAND_LIGHT : ready ? BRAND : '#f8f8f8',
-                color: p.confirmed ? BRAND_MID : ready ? '#fff' : '#ccc',
-                fontWeight: ready ? 500 : 400,
-              }}>
+            <button onClick={() => ready && onConfirm(p.id)} style={{
+              fontSize:11, padding:'5px 11px', borderRadius:7, whiteSpace:'nowrap',
+              cursor: ready ? 'pointer' : 'default',
+              border: p.confirmed ? `0.5px solid ${BRAND_BRD}` : ready ? `0.5px solid ${BRAND}` : '0.5px solid #ddd',
+              background: p.confirmed ? BRAND_LIGHT : ready ? BRAND : '#f8f8f8',
+              color: p.confirmed ? BRAND_MID : ready ? '#fff' : '#ccc',
+              fontWeight: ready ? 500 : 400,
+            }}>
               {p.confirmed ? '🔒 Concluído' : ready ? '✓ Confirmar' : 'Pendente'}
             </button>
           </div>
@@ -417,17 +510,27 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete }) {
           })}
         </div>
       </div>
+
+      {/* Schedule form — inline */}
+      {scheduling && (
+        <ScheduleForm
+          processName={p.nome}
+          defaultWho={p.comQuem}
+          onSave={handleScheduleSave}
+          onCancel={() => setScheduling(false)}
+        />
+      )}
     </div>
   )
 }
 
 // ─── Processos tab ────────────────────────────────────────────
-function Processos({ processes, onToggle, onConfirm, onAdd, onUpdate, onDelete }) {
+function Processos({ processes, onToggle, onConfirm, onAdd, onUpdate, onDelete, onAddMeeting }) {
   const [editingId,  setEditingId]  = useState(null)
   const [editData,   setEditData]   = useState({})
   const [deletingId, setDeletingId] = useState(null)
   const [showAdd,    setShowAdd]    = useState(false)
-  const [addData,    setAddData]    = useState({ nome:'', comQuem:'', consultor:'', formato:'Não definido' })
+  const [addData,    setAddData]    = useState({ nome:'', area:'', comQuem:'', consultor:'', formato:FORMATO_OPTS[0] })
 
   const total   = processes.length
   const done    = processes.filter(p => p.confirmed).length
@@ -436,36 +539,23 @@ function Processos({ processes, onToggle, onConfirm, onAdd, onUpdate, onDelete }
   const barClr  = avgPct >= 70 ? BRAND_MID : avgPct >= 40 ? ACCENT : '#E24B4A'
 
   function startEdit(p) {
-    setDeletingId(null)
-    setShowAdd(false)
+    setDeletingId(null); setShowAdd(false)
     setEditingId(p.id)
-    setEditData({ nome:p.nome, comQuem:p.comQuem, consultor:p.consultor, formato:p.formato || 'Não definido' })
+    setEditData({ nome:p.nome, area:p.area||'', comQuem:p.comQuem, consultor:p.consultor, formato:p.formato||FORMATO_OPTS[0] })
   }
-
-  function saveEdit() {
-    onUpdate(editingId, editData)
-    setEditingId(null)
-  }
-
-  function handleDelete(id) {
-    setEditingId(null)
-    setDeletingId(id)
-  }
-
+  function saveEdit() { onUpdate(editingId, editData); setEditingId(null) }
+  function handleDelete(id) { setEditingId(null); setDeletingId(id) }
   function saveAdd() {
     onAdd(addData)
-    setAddData({ nome:'', comQuem:'', consultor:'', formato:'Não definido' })
+    setAddData({ nome:'', area:'', comQuem:'', consultor:'', formato:FORMATO_OPTS[0] })
     setShowAdd(false)
   }
 
   return (
     <div>
-      {/* Header */}
+      {/* Header — no source reference text */}
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:'1.25rem' }}>
-        <div>
-          <div style={{ fontSize:20, fontWeight:500, color:'#111', marginBottom:2 }}>Controle de Mapeamento de Processos</div>
-          <div style={{ fontSize:12, color:'#888' }}>Fonte: <em>_Controle de Processos _ DF Turismo.xlsx</em> — Aba Mapeamentos</div>
-        </div>
+        <div style={{ fontSize:20, fontWeight:500, color:'#111' }}>Controle de Mapeamento de Processos</div>
         <button
           onClick={() => { setShowAdd(s => !s); setEditingId(null); setDeletingId(null) }}
           style={{
@@ -477,18 +567,11 @@ function Processos({ processes, onToggle, onConfirm, onAdd, onUpdate, onDelete }
         </button>
       </div>
 
-      {/* Add form */}
       {showAdd && (
-        <ProcEditForm
-          data={addData}
-          onChange={setAddData}
-          onSave={saveAdd}
-          onCancel={() => setShowAdd(false)}
-          isNew
-        />
+        <ProcEditForm data={addData} onChange={setAddData} onSave={saveAdd} onCancel={() => setShowAdd(false)} isNew />
       )}
 
-      {/* Summary cards */}
+      {/* Summary */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'.75rem', marginBottom:'1rem' }}>
         {[
           ['Total de processos', total, '#111'],
@@ -503,7 +586,7 @@ function Processos({ processes, onToggle, onConfirm, onAdd, onUpdate, onDelete }
         ))}
       </div>
 
-      {/* Overall progress bar */}
+      {/* Overall progress */}
       <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:10, padding:'.9rem 1.1rem', marginBottom:'1.1rem' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
           <span style={{ fontSize:12, fontWeight:500, color:'#555' }}>Progresso geral do projeto</span>
@@ -527,44 +610,27 @@ function Processos({ processes, onToggle, onConfirm, onAdd, onUpdate, onDelete }
           <span style={{ width:14, height:14, borderRadius:4, background:BRAND, display:'inline-block' }} /> Etapa concluída
         </span>
         <span style={{ display:'flex', alignItems:'center', gap:5 }}>
-          <span style={{ width:14, height:14, borderRadius:4, border:'1.5px dashed #d0d0d0', display:'inline-block' }} /> Pendente — clique para marcar
+          <span style={{ width:14, height:14, borderRadius:4, border:'1.5px dashed #d0d0d0', display:'inline-block' }} /> Pendente
         </span>
-        <span style={{ marginLeft:'auto', fontSize:10, color:'#ccc' }}>✏️ editar · 🗑 excluir · Confirmar ativa em 100%</span>
+        <span style={{ marginLeft:'auto', fontSize:10, color:'#ccc' }}>📅 agendar · ✏️ editar · 🗑 excluir</span>
       </div>
 
-      {/* Process cards */}
+      {/* Cards */}
       {processes.map(p => {
-        if (deletingId === p.id) {
-          return (
-            <DeleteConfirm
-              key={p.id}
-              nome={p.nome}
-              onConfirm={() => { onDelete(p.id); setDeletingId(null) }}
-              onCancel={() => setDeletingId(null)}
-            />
-          )
-        }
-        if (editingId === p.id) {
-          return (
-            <ProcEditForm
-              key={p.id}
-              data={editData}
-              onChange={setEditData}
-              onSave={saveEdit}
-              onCancel={() => setEditingId(null)}
-              isNew={false}
-            />
-          )
-        }
+        if (deletingId === p.id) return (
+          <DeleteConfirm key={p.id} nome={p.nome}
+            onConfirm={() => { onDelete(p.id); setDeletingId(null) }}
+            onCancel={() => setDeletingId(null)} />
+        )
+        if (editingId === p.id) return (
+          <ProcEditForm key={p.id} data={editData} onChange={setEditData}
+            onSave={saveEdit} onCancel={() => setEditingId(null)} isNew={false} />
+        )
         return (
-          <ProcCard
-            key={p.id}
-            p={p}
-            onToggle={onToggle}
-            onConfirm={onConfirm}
-            onEdit={startEdit}
-            onDelete={handleDelete}
-          />
+          <ProcCard key={p.id} p={p}
+            onToggle={onToggle} onConfirm={onConfirm}
+            onEdit={startEdit} onDelete={handleDelete}
+            onAddMeeting={onAddMeeting} />
         )
       })}
     </div>
@@ -572,21 +638,23 @@ function Processos({ processes, onToggle, onConfirm, onAdd, onUpdate, onDelete }
 }
 
 // ─── App root ─────────────────────────────────────────────────
-let nextId = 11
-
 export default function App() {
   const [tab,       setTab]       = useState('dashboard')
   const [meetings,  setMeetings]  = useState(initMeetings)
   const [processes, setProcesses] = useState(initProcesses)
 
-  const handleCancel  = id => setMeetings(ms => ms.map(m => m.id===id ? {...m, canceled:!m.canceled} : m))
-  const handleToggle  = (id, key) => setProcesses(ps => ps.map(p => p.id===id && !p.confirmed ? {...p, [key]:!p[key]} : p))
-  const handleConfirm = id => setProcesses(ps => ps.map(p => p.id===id && getPct(p)===100 ? {...p, confirmed:true} : p))
-  const handleDelete  = id => setProcesses(ps => ps.filter(p => p.id !== id))
-  const handleUpdate  = (id, data) => setProcesses(ps => ps.map(p => p.id===id ? {...p, ...data} : p))
-  const handleAdd     = data => {
+  const handleCancel     = id  => setMeetings(ms => ms.map(m => m.id===id ? {...m, canceled:!m.canceled} : m))
+  const handleToggle     = (id,key) => setProcesses(ps => ps.map(p => p.id===id && !p.confirmed ? {...p, [key]:!p[key]} : p))
+  const handleConfirm    = id  => setProcesses(ps => ps.map(p => p.id===id && getPct(p)===100 ? {...p, confirmed:true} : p))
+  const handleDelete     = id  => setProcesses(ps => ps.filter(p => p.id !== id))
+  const handleUpdate     = (id,data) => setProcesses(ps => ps.map(p => p.id===id ? {...p, ...data} : p))
+  const handleAdd        = data => {
     const newNum = processes.length ? Math.max(...processes.map(p => p.num)) + 1 : 1
-    setProcesses(ps => [...ps, { ...emptyStages, id:nextId++, num:newNum, confirmed:false, ...data }])
+    setProcesses(ps => [...ps, { ...emptyStages, id:nextProcId++, num:newNum, confirmed:false, ...data }])
+  }
+  const handleAddMeeting = data => {
+    setMeetings(ms => [...ms, { id:nextMeetingId++, canceled:false, ...data }])
+    setTab('dashboard')
   }
 
   return (
@@ -597,11 +665,9 @@ export default function App() {
           ? <WeekCalendar meetings={meetings} onCancel={handleCancel} />
           : <Processos
               processes={processes}
-              onToggle={handleToggle}
-              onConfirm={handleConfirm}
-              onAdd={handleAdd}
-              onUpdate={handleUpdate}
-              onDelete={handleDelete}
+              onToggle={handleToggle} onConfirm={handleConfirm}
+              onAdd={handleAdd} onUpdate={handleUpdate} onDelete={handleDelete}
+              onAddMeeting={handleAddMeeting}
             />
         }
       </main>
