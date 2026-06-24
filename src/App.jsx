@@ -93,25 +93,25 @@ const getPct = p => Math.round(STAGE_KEYS.filter(s => p[s.key]).length / STAGE_K
 const emptyStages = { coleta:false, modelagem:false, valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false }
 
 const initProcesses = [
-  { id:1,  num:1,  nome:'Emissão de Pacotes Turísticos', area:'Comercial',  comQuem:'Gerência Geral',    consultor:'Ana Lima',  formato:'Fluxograma',
+  { id:1,  num:1,  nome:'Emissão de Pacotes Turísticos', area:['Comercial'],              comQuem:['Gerência Geral'],             consultor:['Ana Lima'],            formato:'Fluxograma',
     coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
-  { id:2,  num:2,  nome:'Atendimento e Reservas',         area:'Atendimento',comQuem:'Sofia Rezende',    consultor:'Carlos M.', formato:'POP - Procedimento Operacional Padrão',
+  { id:2,  num:2,  nome:'Atendimento e Reservas',         area:['Comercial'],              comQuem:['Sofia Rezende'],              consultor:['Carlos M.'],           formato:'POP - Procedimento Operacional Padrão',
     coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:true,  valCliente:true,  corrCliente:true,  analise:false, confirmed:false },
-  { id:3,  num:3,  nome:'Controle Financeiro',            area:'Financeiro', comQuem:'Beatriz Santos',   consultor:'Ana Lima',  formato:'Fluxograma',
+  { id:3,  num:3,  nome:'Controle Financeiro',            area:['Financeiro'],             comQuem:['Beatriz Santos'],             consultor:['Ana Lima'],            formato:'Fluxograma',
     coleta:true,  modelagem:false, valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
-  { id:4,  num:4,  nome:'Gestão de Fornecedores',         area:'Compras',    comQuem:'Rodrigo Torres',   consultor:'Carlos M.', formato:'POP - Procedimento Operacional Padrão',
+  { id:4,  num:4,  nome:'Gestão de Fornecedores',         area:['Compras'],                comQuem:['Rodrigo Torres'],             consultor:['Carlos M.'],           formato:'POP - Procedimento Operacional Padrão',
     coleta:true,  modelagem:true,  valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
-  { id:5,  num:5,  nome:'Recrutamento & Seleção',         area:'RH',         comQuem:'Mariana Lima',     consultor:'Ana Lima',  formato:'Fluxograma',
+  { id:5,  num:5,  nome:'Recrutamento & Seleção',         area:['RH'],                     comQuem:['Mariana Lima'],               consultor:['Ana Lima'],            formato:'Fluxograma',
     coleta:false, modelagem:false, valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
-  { id:6,  num:6,  nome:'Marketing Digital',              area:'Marketing',  comQuem:'Felipe Andrade',   consultor:'Carlos M.', formato:'Fluxograma',
+  { id:6,  num:6,  nome:'Marketing Digital',              area:['Marketing'],              comQuem:['Felipe Andrade'],             consultor:['Carlos M.'],           formato:'Fluxograma',
     coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:true,  valCliente:false, corrCliente:false, analise:false, confirmed:false },
-  { id:7,  num:7,  nome:'Controle de Vendas',             area:'Comercial',  comQuem:'Sofia Rezende',    consultor:'Ana Lima',  formato:'POP - Procedimento Operacional Padrão',
+  { id:7,  num:7,  nome:'Controle de Vendas',             area:['Comercial'],              comQuem:['Sofia Rezende'],              consultor:['Ana Lima'],            formato:'POP - Procedimento Operacional Padrão',
     coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:true,  valCliente:true,  corrCliente:true,  analise:true,  confirmed:true  },
-  { id:8,  num:8,  nome:'Onboarding de Colaboradores',    area:'RH',         comQuem:'Mariana Lima',     consultor:'Carlos M.', formato:'POP - Procedimento Operacional Padrão',
+  { id:8,  num:8,  nome:'Onboarding de Colaboradores',    area:['RH'],                     comQuem:['Mariana Lima'],               consultor:['Carlos M.'],           formato:'POP - Procedimento Operacional Padrão',
     coleta:true,  modelagem:true,  valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
-  { id:9,  num:9,  nome:'Gestão de Transportes',          area:'Operações',  comQuem:'ainda vamos ver',  consultor:'Ana Lima',  formato:'Fluxograma',
+  { id:9,  num:9,  nome:'Gestão de Transportes',          area:['Operações'],              comQuem:[],                             consultor:['Ana Lima'],            formato:'Fluxograma',
     coleta:false, modelagem:false, valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
-  { id:10, num:10, nome:'Relatórios Gerenciais',          area:'Gerência',   comQuem:'Gerência Geral',   consultor:'Carlos M.', formato:'Fluxograma',
+  { id:10, num:10, nome:'Relatórios Gerenciais',          area:['Gerência'],               comQuem:['Gerência Geral'],             consultor:['Carlos M.'],           formato:'Fluxograma',
     coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
 ]
 
@@ -678,9 +678,62 @@ function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel
   )
 }
 
+// ─── ChipSelect ───────────────────────────────────────────────
+// values: string[]  options: string[]  allowFreeText: bool
+function ChipSelect({ values, onChange, options, allowFreeText, placeholder }) {
+  const [freeText, setFreeText] = useState('')
+  const available = options.filter(o => !values.includes(o))
+
+  function add(v) { if (v && !values.includes(v)) onChange([...values, v]) }
+  function remove(v) { onChange(values.filter(x => x !== v)) }
+
+  function commitFree() {
+    const t = freeText.trim()
+    if (t) { add(t); setFreeText('') }
+  }
+
+  return (
+    <div>
+      {/* chips */}
+      {values.length > 0 && (
+        <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:6 }}>
+          {values.map(v => (
+            <span key={v} style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, padding:'3px 8px 3px 10px', borderRadius:99, background:BRAND_LIGHT, color:BRAND, border:`0.5px solid ${BRAND_BRD}` }}>
+              {v}
+              <button onClick={() => remove(v)} style={{ border:'none', background:'none', cursor:'pointer', color:BRAND_MID, fontSize:12, padding:0, lineHeight:1, display:'flex', alignItems:'center' }}>×</button>
+            </span>
+          ))}
+        </div>
+      )}
+      {/* select dropdown */}
+      {available.length > 0 && (
+        <select style={{ ...inputSt, cursor:'pointer', marginBottom: allowFreeText ? 6 : 0 }}
+          value="" onChange={e => { add(e.target.value); e.target.value='' }}>
+          <option value="">{placeholder || '＋ Selecionar…'}</option>
+          {available.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      )}
+      {/* free-text for external collaborators */}
+      {allowFreeText && (
+        <div style={{ display:'flex', gap:6, marginTop: available.length > 0 ? 6 : 0 }}>
+          <input value={freeText} onChange={e => setFreeText(e.target.value)}
+            onKeyDown={e => e.key==='Enter' && commitFree()}
+            placeholder="Colaborador externo… (Enter para adicionar)"
+            style={{ ...inputSt, flex:1, fontSize:12 }} />
+          <button onClick={commitFree} style={{ fontSize:12, padding:'5px 10px', border:`0.5px solid ${BRAND_BRD}`, borderRadius:7, cursor:'pointer', background:BRAND_LIGHT, color:BRAND, whiteSpace:'nowrap' }}>＋</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Process Edit Form ────────────────────────────────────────
 function ProcEditForm({ data, onChange, onSave, onCancel, isNew, consultores, colaboradores }) {
-  const ok = data.nome.trim() && data.comQuem.trim() && data.consultor.trim() && data.area.trim()
+  const areaOpts     = [...new Set(colaboradores.map(c => c.cargo).filter(Boolean))]
+  const consultorOpts = consultores.map(c => c.nome)
+  const colaborOpts   = colaboradores.map(c => c.nome)
+  const ok = data.nome.trim() && data.area.length && data.comQuem.length && data.consultor.length
+
   return (
     <div style={{ background: isNew ? '#FAFCFA' : '#f8fbf9', border:`1.5px solid ${BRAND_BRD}`, borderRadius:12, padding:'1.1rem 1.2rem', marginBottom:'.6rem' }}>
       <div style={{ fontSize:13, fontWeight:500, color:BRAND, marginBottom:'1rem' }}>{isNew ? '＋ Novo processo' : '✏️ Editando processo'}</div>
@@ -690,11 +743,9 @@ function ProcEditForm({ data, onChange, onSave, onCancel, isNew, consultores, co
           <input style={inputSt} value={data.nome} placeholder="Ex: Gestão de Contratos" onChange={e => onChange({ ...data, nome:e.target.value })} />
         </div>
         <div>
-          <label style={labelSt}>Área do processo <span style={{ color:'#E24B4A' }}>*</span></label>
-          <input list="area-list" style={inputSt} value={data.area} placeholder="Ex: Comercial, RH" onChange={e => onChange({ ...data, area:e.target.value })} />
-          <datalist id="area-list">
-            {[...new Set(colaboradores.map(c => c.cargo).filter(Boolean))].map(c => <option key={c} value={c} />)}
-          </datalist>
+          <label style={labelSt}>Área(s) do processo <span style={{ color:'#E24B4A' }}>*</span></label>
+          <ChipSelect values={data.area} onChange={v => onChange({ ...data, area:v })}
+            options={areaOpts} allowFreeText={false} placeholder="＋ Selecionar área…" />
         </div>
         <div>
           <label style={labelSt}>Formato do processo</label>
@@ -702,25 +753,15 @@ function ProcEditForm({ data, onChange, onSave, onCancel, isNew, consultores, co
             {FORMATO_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
         </div>
-        <div>
-          <label style={labelSt}>Ator responsável (com quem coletar) <span style={{ color:'#E24B4A' }}>*</span></label>
-          {colaboradores.length > 0
-            ? <select style={{ ...inputSt, cursor:'pointer' }} value={data.comQuem} onChange={e => onChange({ ...data, comQuem:e.target.value })}>
-                <option value="">Selecione um colaborador</option>
-                {colaboradores.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
-              </select>
-            : <input style={inputSt} value={data.comQuem} placeholder="Ex: Gerência Comercial" onChange={e => onChange({ ...data, comQuem:e.target.value })} />
-          }
+        <div style={{ gridColumn:'1/-1' }}>
+          <label style={labelSt}>Atores responsáveis (coleta) <span style={{ color:'#E24B4A' }}>*</span></label>
+          <ChipSelect values={data.comQuem} onChange={v => onChange({ ...data, comQuem:v })}
+            options={colaborOpts} allowFreeText={true} placeholder="＋ Selecionar colaborador…" />
         </div>
-        <div>
-          <label style={labelSt}>Consultor responsável <span style={{ color:'#E24B4A' }}>*</span></label>
-          {consultores.length > 0
-            ? <select style={{ ...inputSt, cursor:'pointer' }} value={data.consultor} onChange={e => onChange({ ...data, consultor:e.target.value })}>
-                <option value="">Selecione um consultor</option>
-                {consultores.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
-              </select>
-            : <input style={inputSt} value={data.consultor} placeholder="Ex: Ana Lima" onChange={e => onChange({ ...data, consultor:e.target.value })} />
-          }
+        <div style={{ gridColumn:'1/-1' }}>
+          <label style={labelSt}>Consultor(es) responsável(is) <span style={{ color:'#E24B4A' }}>*</span></label>
+          <ChipSelect values={data.consultor} onChange={v => onChange({ ...data, consultor:v })}
+            options={consultorOpts} allowFreeText={false} placeholder="＋ Selecionar consultor…" />
         </div>
       </div>
       <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
@@ -758,10 +799,15 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting, cola
         <div style={{ minWidth:0 }}>
           <div style={{ fontSize:14, fontWeight:500, color:'#111', lineHeight:1.3, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{p.nome}</div>
           <div style={{ display:'flex', gap:5, marginTop:4, flexWrap:'wrap' }}>
-            {p.area && <span style={{ fontSize:9, padding:'2px 7px', borderRadius:99, background:BRAND_LIGHT, color:BRAND_MID, fontWeight:500 }}>{p.area}</span>}
+            {(Array.isArray(p.area) ? p.area : [p.area]).filter(Boolean).map(a => (
+              <span key={a} style={{ fontSize:9, padding:'2px 7px', borderRadius:99, background:BRAND_LIGHT, color:BRAND_MID, fontWeight:500 }}>{a}</span>
+            ))}
             {p.formato && <span style={{ fontSize:9, padding:'2px 7px', borderRadius:99, background:'#f0f0f0', color:'#777' }}>{fmtShort}</span>}
           </div>
-          <div style={{ fontSize:11, color:'#888', marginTop:4, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>👤 {p.comQuem} · Consultor: {p.consultor}</div>
+          <div style={{ fontSize:11, color:'#888', marginTop:4 }}>
+            👤 {(Array.isArray(p.comQuem) ? p.comQuem : [p.comQuem]).filter(Boolean).join(', ') || '—'}
+            {' · '}Consultor: {(Array.isArray(p.consultor) ? p.consultor : [p.consultor]).filter(Boolean).join(', ') || '—'}
+          </div>
           <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:7 }}>
             <div style={{ flex:1, height:5, background:'#eee', borderRadius:99, overflow:'hidden' }}>
               <div style={{ height:'100%', width:`${pct}%`, background:barColor, borderRadius:99, transition:'width .4s' }} />
@@ -813,17 +859,18 @@ function Processos({ processes, consultores, colaboradores, onToggle, onConfirm,
   const [editData,  setEditData]   = useState({})
   const [deletingId,setDeletingId] = useState(null)
   const [showAdd,   setShowAdd]    = useState(false)
-  const [addData,   setAddData]    = useState({ nome:'', area:'', comQuem:'', consultor: consultores[0]?.nome||'', formato:FORMATO_OPTS[0] })
+  const [addData,   setAddData]    = useState({ nome:'', area:[], comQuem:[], consultor:[], formato:FORMATO_OPTS[0] })
 
   const total  = processes.length
   const done   = processes.filter(p => p.confirmed).length
   const avgPct = total ? Math.round(processes.map(getPct).reduce((a,b)=>a+b,0)/total) : 0
   const barClr = avgPct>=70 ? BRAND_MID : avgPct>=40 ? ACCENT : '#E24B4A'
 
-  function startEdit(p){ setDeletingId(null); setShowAdd(false); setEditingId(p.id); setEditData({ nome:p.nome, area:p.area||'', comQuem:p.comQuem, consultor:p.consultor, formato:p.formato||FORMATO_OPTS[0] }) }
+  function toArr(v) { return Array.isArray(v) ? v : (v ? [v] : []) }
+  function startEdit(p){ setDeletingId(null); setShowAdd(false); setEditingId(p.id); setEditData({ nome:p.nome, area:toArr(p.area), comQuem:toArr(p.comQuem), consultor:toArr(p.consultor), formato:p.formato||FORMATO_OPTS[0] }) }
   function saveEdit()  { onUpdate(editingId, editData); setEditingId(null) }
   function handleDel(id){ setEditingId(null); setDeletingId(id) }
-  function saveAdd()   { onAdd(addData); setAddData({ nome:'', area:'', comQuem:'', consultor: consultores[0]?.nome||'', formato:FORMATO_OPTS[0] }); setShowAdd(false) }
+  function saveAdd()   { onAdd(addData); setAddData({ nome:'', area:[], comQuem:[], consultor:[], formato:FORMATO_OPTS[0] }); setShowAdd(false) }
 
   return (
     <div>
