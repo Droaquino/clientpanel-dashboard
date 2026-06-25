@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './index.css'
 
 // ─── Theme ────────────────────────────────────────────────────
@@ -45,6 +45,107 @@ function monthGrid(dt) {
   for(let i=1;i<=days;i++) cells.push(new Date(y,m,i,12))
   while(cells.length%7) cells.push(null)
   return cells
+}
+
+// ─── Auth ─────────────────────────────────────────────────────
+const USERS = [
+  { id:1, nome:'Pedro Aquino', role:'coordenador', cargo:'Coordenador',  senha:'coord2024',   grupo:'gestao'  },
+  { id:2, nome:'Ana Lima',     role:'consultor',   cargo:'Consultora',   senha:'cons2024',    grupo:'gestao'  },
+  { id:3, nome:'Carlos M.',    role:'consultor',   cargo:'Consultor',    senha:'cons2024',    grupo:'gestao'  },
+  { id:4, nome:'DF Turismo',   role:'socio',       cargo:'Sócio',        senha:'socio2024',   grupo:'cliente' },
+  { id:5, nome:'Visitante',    role:'cliente',     cargo:'Cliente',      senha:'cliente2024', grupo:'cliente' },
+]
+
+function LoginScreen({ onLogin }) {
+  const [section,  setSection ] = useState('gestao')
+  const [userId,   setUserId  ] = useState('')
+  const [clientType, setClientType] = useState('socio')
+  const [clientName, setClientName] = useState('')
+  const [senha,    setSenha   ] = useState('')
+  const [err,      setErr     ] = useState('')
+
+  function doLogin() {
+    setErr('')
+    if (section === 'gestao') {
+      const u = USERS.find(x => x.id === Number(userId) && x.grupo === 'gestao')
+      if (!u) { setErr('Selecione um usuário.'); return }
+      if (u.senha !== senha) { setErr('Senha incorreta.'); return }
+      localStorage.setItem('pcUser', JSON.stringify(u))
+      onLogin(u)
+    } else {
+      const targetRole = clientType
+      const u = USERS.find(x => x.role === targetRole && x.grupo === 'cliente')
+      if (!u) { setErr('Tipo inválido.'); return }
+      if (u.senha !== senha) { setErr('Senha incorreta.'); return }
+      const logged = { ...u, nome: clientName.trim() || u.nome }
+      localStorage.setItem('pcUser', JSON.stringify(logged))
+      onLogin(logged)
+    }
+  }
+
+  const gestaoUsers = USERS.filter(x => x.grupo === 'gestao')
+
+  return (
+    <div style={{ minHeight:'100vh', background:`linear-gradient(135deg, ${BRAND} 0%, ${BRAND_MID} 100%)`, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}>
+      <div style={{ background:'#fff', borderRadius:18, padding:'2rem', width:380, maxWidth:'95vw', boxShadow:'0 16px 60px rgba(0,0,0,.25)' }}>
+        {/* Logo */}
+        <div style={{ textAlign:'center', marginBottom:'1.5rem' }}>
+          <div style={{ width:52, height:52, borderRadius:14, background:BRAND, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, color:'#fff', margin:'0 auto 10px' }}>⊞</div>
+          <div style={{ fontSize:17, fontWeight:600, color:BRAND }}>Painel de Controle</div>
+          <div style={{ fontSize:12, color:'#888', marginTop:2 }}>DF Turismo</div>
+        </div>
+
+        {/* Section tabs */}
+        <div style={{ display:'flex', border:`0.5px solid ${BRAND_BRD}`, borderRadius:9, overflow:'hidden', marginBottom:'1.25rem' }}>
+          {[['gestao','Grupo Gestão'],['cliente','Acesso Cliente']].map(([s,l]) => (
+            <button key={s} onClick={() => { setSection(s); setErr('') }} style={{
+              flex:1, padding:'8px', fontSize:12, border:'none', cursor:'pointer', fontWeight: section===s ? 500 : 400,
+              background: section===s ? BRAND : '#fff', color: section===s ? '#fff' : '#555',
+            }}>{l}</button>
+          ))}
+        </div>
+
+        {section === 'gestao' ? (
+          <>
+            <div style={{ marginBottom:10 }}>
+              <label style={labelSt}>Usuário</label>
+              <select style={{ ...inputSt, cursor:'pointer' }} value={userId} onChange={e => setUserId(e.target.value)}>
+                <option value="">Selecione…</option>
+                {gestaoUsers.map(u => <option key={u.id} value={u.id}>{u.nome} — {u.cargo}</option>)}
+              </select>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ marginBottom:10 }}>
+              <label style={labelSt}>Tipo de acesso</label>
+              <select style={{ ...inputSt, cursor:'pointer' }} value={clientType} onChange={e => setClientType(e.target.value)}>
+                <option value="socio">Sócio</option>
+                <option value="cliente">Cliente</option>
+              </select>
+            </div>
+            <div style={{ marginBottom:10 }}>
+              <label style={labelSt}>Seu nome</label>
+              <input style={inputSt} value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Nome (opcional)" />
+            </div>
+          </>
+        )}
+
+        <div style={{ marginBottom:'1rem' }}>
+          <label style={labelSt}>Senha</label>
+          <input type="password" style={inputSt} value={senha} onChange={e => setSenha(e.target.value)}
+            onKeyDown={e => e.key==='Enter' && doLogin()} placeholder="••••••••" />
+        </div>
+
+        {err && <div style={{ fontSize:11, color:'#A32D2D', marginBottom:8 }}>{err}</div>}
+
+        <button onClick={doLogin} style={{
+          width:'100%', padding:'9px', borderRadius:8, fontSize:13, fontWeight:500,
+          background:BRAND, color:'#fff', border:'none', cursor:'pointer',
+        }}>Entrar</button>
+      </div>
+    </div>
+  )
 }
 
 // ─── Seed — People ────────────────────────────────────────────
@@ -94,25 +195,25 @@ const emptyStages = { coleta:false, modelagem:false, valCOPS:false, corrCOPS:fal
 
 const initProcesses = [
   { id:1,  num:1,  nome:'Emissão de Pacotes Turísticos', area:['Comercial'],              comQuem:['Gerência Geral'],             consultor:['Ana Lima'],            formato:'Fluxograma',
-    coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
+    coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false, comentarios:[] },
   { id:2,  num:2,  nome:'Atendimento e Reservas',         area:['Comercial'],              comQuem:['Sofia Rezende'],              consultor:['Carlos M.'],           formato:'POP - Procedimento Operacional Padrão',
-    coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:true,  valCliente:true,  corrCliente:true,  analise:false, confirmed:false },
+    coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:true,  valCliente:true,  corrCliente:true,  analise:false, confirmed:false, comentarios:[] },
   { id:3,  num:3,  nome:'Controle Financeiro',            area:['Financeiro'],             comQuem:['Beatriz Santos'],             consultor:['Ana Lima'],            formato:'Fluxograma',
-    coleta:true,  modelagem:false, valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
+    coleta:true,  modelagem:false, valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false, comentarios:[] },
   { id:4,  num:4,  nome:'Gestão de Fornecedores',         area:['Compras'],                comQuem:['Rodrigo Torres'],             consultor:['Carlos M.'],           formato:'POP - Procedimento Operacional Padrão',
-    coleta:true,  modelagem:true,  valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
+    coleta:true,  modelagem:true,  valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false, comentarios:[] },
   { id:5,  num:5,  nome:'Recrutamento & Seleção',         area:['RH'],                     comQuem:['Mariana Lima'],               consultor:['Ana Lima'],            formato:'Fluxograma',
-    coleta:false, modelagem:false, valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
+    coleta:false, modelagem:false, valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false, comentarios:[] },
   { id:6,  num:6,  nome:'Marketing Digital',              area:['Marketing'],              comQuem:['Felipe Andrade'],             consultor:['Carlos M.'],           formato:'Fluxograma',
-    coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:true,  valCliente:false, corrCliente:false, analise:false, confirmed:false },
+    coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:true,  valCliente:false, corrCliente:false, analise:false, confirmed:false, comentarios:[] },
   { id:7,  num:7,  nome:'Controle de Vendas',             area:['Comercial'],              comQuem:['Sofia Rezende'],              consultor:['Ana Lima'],            formato:'POP - Procedimento Operacional Padrão',
-    coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:true,  valCliente:true,  corrCliente:true,  analise:true,  confirmed:true  },
+    coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:true,  valCliente:true,  corrCliente:true,  analise:true,  confirmed:true,  comentarios:[] },
   { id:8,  num:8,  nome:'Onboarding de Colaboradores',    area:['RH'],                     comQuem:['Mariana Lima'],               consultor:['Carlos M.'],           formato:'POP - Procedimento Operacional Padrão',
-    coleta:true,  modelagem:true,  valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
+    coleta:true,  modelagem:true,  valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false, comentarios:[] },
   { id:9,  num:9,  nome:'Gestão de Transportes',          area:['Operações'],              comQuem:[],                             consultor:['Ana Lima'],            formato:'Fluxograma',
-    coleta:false, modelagem:false, valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
+    coleta:false, modelagem:false, valCOPS:false, corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false, comentarios:[] },
   { id:10, num:10, nome:'Relatórios Gerenciais',          area:['Gerência'],               comQuem:['Gerência Geral'],             consultor:['Carlos M.'],           formato:'Fluxograma',
-    coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false },
+    coleta:true,  modelagem:true,  valCOPS:true,  corrCOPS:false, valCliente:false, corrCliente:false, analise:false, confirmed:false, comentarios:[] },
 ]
 
 // ─── Shared styles ────────────────────────────────────────────
@@ -120,13 +221,17 @@ const inputSt = { width:'100%', padding:'6px 10px', fontSize:13, border:'0.5px s
 const labelSt = { fontSize:11, color:'#666', marginBottom:3, display:'block' }
 
 // ─── Sidebar ─────────────────────────────────────────────────
-function Sidebar({ tab, setTab }) {
-  const items = [
-    { id:'dashboard',    icon:'📊', label:'Dashboard'     },
-    { id:'agenda',       icon:'📅', label:'Agenda'         },
-    { id:'processos',    icon:'🗂',  label:'Processos'      },
-    { id:'configuracoes',icon:'⚙️', label:'Configurações'  },
+function Sidebar({ tab, setTab, user, onLogout }) {
+  const role = user?.role || 'cliente'
+  const allItems = [
+    { id:'dashboard',    icon:'📊', label:'Dashboard',     roles:['coordenador','consultor'] },
+    { id:'agenda',       icon:'📅', label:'Agenda',         roles:['coordenador','consultor'] },
+    { id:'levantamento', icon:'📋', label:'Levantamento',   roles:['coordenador','consultor'] },
+    { id:'processos',    icon:'🗂',  label:'Processos',      roles:['coordenador','consultor','socio','cliente'] },
+    { id:'configuracoes',icon:'⚙️', label:'Configurações',  roles:['coordenador'] },
   ]
+  const items = allItems.filter(i => i.roles.includes(role))
+  const initials = (user?.nome||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
   return (
     <nav style={{ width:210, flexShrink:0, background:BRAND, display:'flex', flexDirection:'column', padding:'1.25rem 0' }}>
       <div style={{ padding:'0 1rem 1.25rem', borderBottom:'1px solid rgba(255,255,255,.1)', marginBottom:'.75rem' }}>
@@ -150,13 +255,14 @@ function Sidebar({ tab, setTab }) {
         </div>
       ))}
       <div style={{ marginTop:'auto', padding:'1rem', borderTop:'1px solid rgba(255,255,255,.1)' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <div style={{ width:28, height:28, borderRadius:'50%', background:ACCENT, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'#0D2519', fontWeight:500 }}>DF</div>
-          <div>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,.85)', fontWeight:500 }}>DF Turismo</div>
-            <div style={{ fontSize:10, color:'rgba(255,255,255,.5)' }}>cliente</div>
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+          <div style={{ width:28, height:28, borderRadius:'50%', background:ACCENT, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'#0D2519', fontWeight:600, flexShrink:0 }}>{initials}</div>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,.85)', fontWeight:500, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{user?.nome}</div>
+            <div style={{ fontSize:10, color:'rgba(255,255,255,.5)' }}>{user?.cargo}</div>
           </div>
         </div>
+        <button onClick={onLogout} style={{ width:'100%', fontSize:11, padding:'5px', border:'0.5px solid rgba(255,255,255,.25)', borderRadius:6, cursor:'pointer', background:'rgba(255,255,255,.08)', color:'rgba(255,255,255,.7)' }}>Sair</button>
       </div>
     </nav>
   )
@@ -1044,13 +1150,73 @@ function DeleteConfirm({ nome, onConfirm, onCancel }) {
   )
 }
 
+// ─── ComentariosBox ───────────────────────────────────────────
+let nextCommentId = 1
+const ROLE_BADGE = {
+  coordenador: { bg:BRAND,       color:'#fff'   },
+  consultor:   { bg:'#2563EB',   color:'#fff'   },
+  socio:       { bg:ACCENT,      color:'#0D2519'},
+  cliente:     { bg:'#9CA3AF',   color:'#fff'   },
+}
+
+function ComentariosBox({ comentarios, onAdd, user, readonly }) {
+  const [texto, setTexto] = useState('')
+
+  function submit() {
+    const t = texto.trim()
+    if (!t) return
+    onAdd({ id: nextCommentId++, autor: user.nome, role: user.role, texto: t, data: new Date().toLocaleDateString('pt-BR') })
+    setTexto('')
+  }
+
+  return (
+    <div style={{ marginTop:10 }}>
+      {comentarios.length === 0 && (
+        <div style={{ fontSize:11, color:'#bbb', textAlign:'center', padding:'8px 0' }}>Nenhum comentário ainda.</div>
+      )}
+      {comentarios.map(c => {
+        const badge = ROLE_BADGE[c.role] || ROLE_BADGE.cliente
+        return (
+          <div key={c.id} style={{ display:'flex', gap:8, marginBottom:8, alignItems:'flex-start' }}>
+            <div style={{ width:26, height:26, borderRadius:'50%', background:badge.bg, color:badge.color, fontSize:9, fontWeight:600, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              {c.autor.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
+            </div>
+            <div style={{ flex:1, background:'#f7f9f7', borderRadius:8, padding:'6px 9px' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
+                <span style={{ fontSize:11, fontWeight:500, color:'#111' }}>{c.autor}</span>
+                <span style={{ fontSize:9, padding:'1px 6px', borderRadius:99, background:badge.bg, color:badge.color, fontWeight:500 }}>{c.role}</span>
+                <span style={{ fontSize:9, color:'#bbb', marginLeft:'auto' }}>{c.data}</span>
+              </div>
+              <div style={{ fontSize:12, color:'#333', lineHeight:1.5 }}>{c.texto}</div>
+            </div>
+          </div>
+        )
+      })}
+      {!readonly && (
+        <div style={{ display:'flex', gap:6, marginTop:6 }}>
+          <input value={texto} onChange={e => setTexto(e.target.value)} onKeyDown={e => e.key==='Enter' && submit()}
+            placeholder="Adicionar comentário…" style={{ ...inputSt, flex:1, fontSize:12 }} />
+          <button onClick={submit} style={{ fontSize:11, padding:'5px 12px', border:`0.5px solid ${BRAND}`, borderRadius:7, cursor:'pointer', background:BRAND, color:'#fff', whiteSpace:'nowrap' }}>Comentar</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Process Card ─────────────────────────────────────────────
-function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting, colaboradores }) {
-  const [scheduling, setScheduling] = useState(false)
+function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting, colaboradores, user, onAddComment }) {
+  const [scheduling,   setScheduling  ] = useState(false)
+  const [showComments, setShowComments] = useState(false)
+  const role     = user?.role || 'cliente'
+  const canEdit  = role === 'coordenador' || role === 'consultor'
+  const canSchedule = role === 'coordenador' || role === 'consultor' || role === 'socio'
+  const canConfirm  = role === 'coordenador' || role === 'consultor'
+  const readonlyComments = role === 'cliente'
   const pct      = getPct(p)
   const ready    = pct===100 && !p.confirmed
   const barColor = pct===100 ? BRAND : pct>=70 ? BRAND_MID : pct>=40 ? ACCENT : '#E24B4A'
   const fmtShort = p.formato==='Fluxograma' ? 'Fluxograma' : 'POP'
+  const comentarios = p.comentarios || []
   return (
     <div style={{ background:'#fff', border:`0.5px solid ${p.confirmed ? BRAND_BRD : '#e2e8e4'}`, borderRadius:12, padding:'1rem 1.1rem', marginBottom:'.6rem', boxShadow: p.confirmed ? `0 0 0 1px ${BRAND_BRD}` : 'none' }}>
       <div style={{ display:'grid', gridTemplateColumns:'28px 1fr auto', gap:10, alignItems:'start', marginBottom:'.85rem' }}>
@@ -1075,51 +1241,70 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting, cola
             <span style={{ fontSize:10, color:'#bbb', flexShrink:0 }}>{STAGE_KEYS.filter(s=>p[s.key]).length}/{STAGE_KEYS.length}</span>
           </div>
         </div>
-        <div style={{ display:'flex', gap:5 }}>
-          <button onClick={() => setScheduling(s => !s)} title="Agendar reunião" style={{ fontSize:11, padding:'4px 9px', borderRadius:6, cursor:'pointer', border: scheduling ? `0.5px solid ${BRAND_MID}` : '0.5px solid #d0d0d0', background: scheduling ? BRAND_LIGHT : '#fff', color: scheduling ? BRAND : '#555' }}>📅</button>
-          {!p.confirmed && <button onClick={() => onEdit(p)} title="Editar" style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #d0d0d0', borderRadius:6, cursor:'pointer', background:'#fff', color:'#555' }}>✏️</button>}
-          {!p.confirmed && <button onClick={() => onDelete(p.id)} title="Excluir" style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #f5c6c6', borderRadius:6, cursor:'pointer', background:'#fff', color:'#A32D2D' }}>🗑</button>}
-          <button onClick={() => ready && onConfirm(p.id)} style={{
+        <div style={{ display:'flex', gap:5, flexWrap:'wrap', justifyContent:'flex-end' }}>
+          {canSchedule && <button onClick={() => setScheduling(s => !s)} title="Agendar reunião" style={{ fontSize:11, padding:'4px 9px', borderRadius:6, cursor:'pointer', border: scheduling ? `0.5px solid ${BRAND_MID}` : '0.5px solid #d0d0d0', background: scheduling ? BRAND_LIGHT : '#fff', color: scheduling ? BRAND : '#555' }}>📅</button>}
+          {canEdit && !p.confirmed && <button onClick={() => onEdit(p)} title="Editar" style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #d0d0d0', borderRadius:6, cursor:'pointer', background:'#fff', color:'#555' }}>✏️</button>}
+          {canEdit && !p.confirmed && <button onClick={() => onDelete(p.id)} title="Excluir" style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #f5c6c6', borderRadius:6, cursor:'pointer', background:'#fff', color:'#A32D2D' }}>🗑</button>}
+          {canConfirm && <button onClick={() => ready && onConfirm(p.id)} style={{
             fontSize:11, padding:'5px 11px', borderRadius:7, whiteSpace:'nowrap', cursor: ready ? 'pointer' : 'default',
             border: p.confirmed ? `0.5px solid ${BRAND_BRD}` : ready ? `0.5px solid ${BRAND}` : '0.5px solid #ddd',
             background: p.confirmed ? BRAND_LIGHT : ready ? BRAND : '#f8f8f8',
             color: p.confirmed ? BRAND_MID : ready ? '#fff' : '#ccc', fontWeight: ready ? 500 : 400,
-          }}>{p.confirmed ? '🔒 Concluído' : ready ? '✓ Confirmar' : 'Pendente'}</button>
+          }}>{p.confirmed ? '🔒 Concluído' : ready ? '✓ Confirmar' : 'Pendente'}</button>}
         </div>
       </div>
-      <div style={{ overflowX:'auto' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:6, minWidth:490 }}>
-          {STAGE_KEYS.map(({ key, label }) => {
-            const checked = p[key]
-            return (
-              <div key={key} onClick={() => !p.confirmed && onToggle(p.id, key)} style={{
-                borderRadius:8, padding:'8px 4px 6px', textAlign:'center', transition:'all .18s', userSelect:'none',
-                background: checked ? BRAND : '#f8f8f8', border:`1.5px ${checked ? 'solid' : 'dashed'} ${checked ? BRAND_MID : '#d0d0d0'}`, cursor: p.confirmed ? 'default' : 'pointer',
-              }}>
-                <div style={{ width:22, height:22, borderRadius:'50%', margin:'0 auto 5px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, background: checked ? 'rgba(255,255,255,.2)' : '#ebebeb', border:`1.5px solid ${checked ? 'rgba(255,255,255,.4)' : '#d5d5d5'}`, color: checked ? '#fff' : '#ccc' }}>{checked ? '✓' : ''}</div>
-                <div style={{ fontSize:9, fontWeight: checked ? 500 : 400, color: checked ? 'rgba(255,255,255,.9)' : '#aaa', lineHeight:1.3 }}>{label}</div>
-              </div>
-            )
-          })}
+      {canEdit && (
+        <div style={{ overflowX:'auto' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:6, minWidth:490 }}>
+            {STAGE_KEYS.map(({ key, label }) => {
+              const checked = p[key]
+              return (
+                <div key={key} onClick={() => !p.confirmed && onToggle(p.id, key)} style={{
+                  borderRadius:8, padding:'8px 4px 6px', textAlign:'center', transition:'all .18s', userSelect:'none',
+                  background: checked ? BRAND : '#f8f8f8', border:`1.5px ${checked ? 'solid' : 'dashed'} ${checked ? BRAND_MID : '#d0d0d0'}`, cursor: p.confirmed ? 'default' : 'pointer',
+                }}>
+                  <div style={{ width:22, height:22, borderRadius:'50%', margin:'0 auto 5px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, background: checked ? 'rgba(255,255,255,.2)' : '#ebebeb', border:`1.5px solid ${checked ? 'rgba(255,255,255,.4)' : '#d5d5d5'}`, color: checked ? '#fff' : '#ccc' }}>{checked ? '✓' : ''}</div>
+                  <div style={{ fontSize:9, fontWeight: checked ? 500 : 400, color: checked ? 'rgba(255,255,255,.9)' : '#aaa', lineHeight:1.3 }}>{label}</div>
+                </div>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
       {scheduling && (
         <ScheduleForm processName={p.nome} defaultWho={p.comQuem} colaboradores={colaboradores}
           onSave={data => { onAddMeeting({ title:'Reunião de Coleta | DF Turismo', ...data, ci:(p.id-1)%5 }); setScheduling(false) }}
           onCancel={() => setScheduling(false)} />
       )}
+      {/* Comments section */}
+      <div style={{ borderTop:'0.5px solid #f0f0f0', marginTop:10, paddingTop:8 }}>
+        <div onClick={() => setShowComments(s => !s)} style={{ display:'flex', alignItems:'center', gap:6, cursor:'pointer', fontSize:11, color:'#666', userSelect:'none' }}>
+          <span>💬 Comentários ({comentarios.length})</span>
+          <span style={{ fontSize:10, color:'#bbb' }}>{showComments ? '▲' : '▼'}</span>
+        </div>
+        {showComments && (
+          <ComentariosBox
+            comentarios={comentarios}
+            onAdd={c => onAddComment(p.id, c)}
+            user={user}
+            readonly={readonlyComments}
+          />
+        )}
+      </div>
     </div>
   )
 }
 
 // ─── Processos tab ────────────────────────────────────────────
-function Processos({ processes, consultores, colaboradores, onToggle, onConfirm, onAdd, onUpdate, onDelete, onAddMeeting }) {
+function Processos({ processes, consultores, colaboradores, onToggle, onConfirm, onAdd, onUpdate, onDelete, onAddMeeting, user, onAddComment }) {
   const [editingId, setEditingId]  = useState(null)
   const [editData,  setEditData]   = useState({})
   const [deletingId,setDeletingId] = useState(null)
   const [showAdd,   setShowAdd]    = useState(false)
   const [addData,   setAddData]    = useState({ nome:'', area:[], comQuem:[], consultor:[], formato:FORMATO_OPTS[0] })
 
+  const role   = user?.role || 'cliente'
+  const canEdit = role === 'coordenador' || role === 'consultor'
   const total  = processes.length
   const done   = processes.filter(p => p.confirmed).length
   const avgPct = total ? Math.round(processes.map(getPct).reduce((a,b)=>a+b,0)/total) : 0
@@ -1135,10 +1320,12 @@ function Processos({ processes, consultores, colaboradores, onToggle, onConfirm,
     <div>
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:'1.25rem' }}>
         <div style={{ fontSize:20, fontWeight:500, color:'#111' }}>Controle de Mapeamento de Processos</div>
-        <button onClick={() => { setShowAdd(s=>!s); setEditingId(null); setDeletingId(null) }}
-          style={{ fontSize:12, padding:'7px 15px', border:`0.5px solid ${BRAND}`, borderRadius:8, cursor:'pointer', background: showAdd ? '#f0f0f0' : BRAND, color: showAdd ? '#555' : '#fff', fontWeight:500, flexShrink:0, marginTop:2 }}>
-          {showAdd ? '✕ Cancelar' : '＋ Novo processo'}
-        </button>
+        {canEdit && (
+          <button onClick={() => { setShowAdd(s=>!s); setEditingId(null); setDeletingId(null) }}
+            style={{ fontSize:12, padding:'7px 15px', border:`0.5px solid ${BRAND}`, borderRadius:8, cursor:'pointer', background: showAdd ? '#f0f0f0' : BRAND, color: showAdd ? '#555' : '#fff', fontWeight:500, flexShrink:0, marginTop:2 }}>
+            {showAdd ? '✕ Cancelar' : '＋ Novo processo'}
+          </button>
+        )}
       </div>
 
       {consultores.length===0 && (
@@ -1177,19 +1364,73 @@ function Processos({ processes, consultores, colaboradores, onToggle, onConfirm,
       {processes.map(p => {
         if (deletingId===p.id) return <DeleteConfirm key={p.id} nome={p.nome} onConfirm={() => { onDelete(p.id); setDeletingId(null) }} onCancel={() => setDeletingId(null)} />
         if (editingId===p.id)  return <ProcEditForm key={p.id} data={editData} onChange={setEditData} onSave={saveEdit} onCancel={() => setEditingId(null)} isNew={false} consultores={consultores} colaboradores={colaboradores} />
-        return <ProcCard key={p.id} p={p} onToggle={onToggle} onConfirm={onConfirm} onEdit={startEdit} onDelete={handleDel} onAddMeeting={onAddMeeting} colaboradores={colaboradores} />
+        return <ProcCard key={p.id} p={p} onToggle={onToggle} onConfirm={onConfirm} onEdit={startEdit} onDelete={handleDel} onAddMeeting={onAddMeeting} colaboradores={colaboradores} user={user} onAddComment={onAddComment} />
       })}
+    </div>
+  )
+}
+
+// ─── Levantamento tab ─────────────────────────────────────────
+function Levantamento({ consultores, colaboradores, onAdd, onGoProcessos }) {
+  const [data,    setData   ] = useState({ nome:'', area:[], comQuem:[], consultor:[], formato:FORMATO_OPTS[0] })
+  const [success, setSuccess] = useState(false)
+
+  function handleSave() {
+    onAdd(data)
+    setData({ nome:'', area:[], comQuem:[], consultor:[], formato:FORMATO_OPTS[0] })
+    setSuccess(true)
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize:20, fontWeight:500, color:'#111', marginBottom:'.2rem' }}>Levantamento de Processos</div>
+      <div style={{ fontSize:12, color:'#888', marginBottom:'1.5rem' }}>Cadastre um novo processo para acompanhamento</div>
+
+      {success ? (
+        <div style={{ background:BRAND_LIGHT, border:`0.5px solid ${BRAND_BRD}`, borderRadius:12, padding:'1.5rem', textAlign:'center' }}>
+          <div style={{ fontSize:22, marginBottom:8 }}>✅</div>
+          <div style={{ fontSize:14, fontWeight:500, color:BRAND, marginBottom:4 }}>Processo lançado!</div>
+          <div style={{ fontSize:12, color:'#555', marginBottom:'1.25rem' }}>Acesse a aba Processos para acompanhar.</div>
+          <div style={{ display:'flex', gap:8, justifyContent:'center' }}>
+            <button onClick={() => setSuccess(false)} style={{ fontSize:12, padding:'7px 16px', border:`0.5px solid ${BRAND_BRD}`, borderRadius:8, cursor:'pointer', background:'#fff', color:BRAND }}>＋ Lançar outro</button>
+            <button onClick={onGoProcessos} style={{ fontSize:12, padding:'7px 16px', border:`0.5px solid ${BRAND}`, borderRadius:8, cursor:'pointer', background:BRAND, color:'#fff', fontWeight:500 }}>Ver Processos</button>
+          </div>
+        </div>
+      ) : (
+        <ProcEditForm
+          data={data}
+          onChange={setData}
+          onSave={handleSave}
+          onCancel={() => setData({ nome:'', area:[], comQuem:[], consultor:[], formato:FORMATO_OPTS[0] })}
+          isNew
+          consultores={consultores}
+          colaboradores={colaboradores}
+        />
+      )}
     </div>
   )
 }
 
 // ─── App root ─────────────────────────────────────────────────
 export default function App() {
+  const [user,         setUser        ] = useState(() => {
+    try { const s = localStorage.getItem('pcUser'); return s ? JSON.parse(s) : null } catch { return null }
+  })
   const [tab,          setTab         ] = useState('dashboard')
   const [meetings,     setMeetings    ] = useState(initMeetings)
   const [processes,    setProcesses   ] = useState(initProcesses)
   const [colaboradores,setColaboradores]= useState(initColaboradores)
   const [consultores,  setConsultores ] = useState(initConsultores)
+
+  // Set default tab per role after login
+  useEffect(() => {
+    if (!user) return
+    if (user.role === 'socio' || user.role === 'cliente') setTab('processos')
+    else setTab('dashboard')
+  }, [user?.id])
+
+  function handleLogin(u) { setUser(u) }
+  function handleLogout() { localStorage.removeItem('pcUser'); setUser(null) }
 
   // Meetings
   const handleMeetingToggle = id   => setMeetings(ms => ms.map(m => m.id===id ? {...m, canceled:!m.canceled} : m))
@@ -1202,7 +1443,8 @@ export default function App() {
   const handleConfirm    = id  => setProcesses(ps => ps.map(p => p.id===id && getPct(p)===100 ? {...p, confirmed:true} : p))
   const handleProcDelete = id  => setProcesses(ps => ps.filter(p => p.id!==id))
   const handleProcUpdate = (id,data) => setProcesses(ps => ps.map(p => p.id===id ? {...p,...data} : p))
-  const handleProcAdd    = data => { const newNum = processes.length ? Math.max(...processes.map(p=>p.num))+1 : 1; setProcesses(ps => [...ps, { ...emptyStages, id:nextProcId++, num:newNum, confirmed:false, ...data }]) }
+  const handleProcAdd    = data => { const newNum = processes.length ? Math.max(...processes.map(p=>p.num))+1 : 1; setProcesses(ps => [...ps, { ...emptyStages, comentarios:[], id:nextProcId++, num:newNum, confirmed:false, ...data }]) }
+  const handleAddComment = (procId, comentario) => setProcesses(ps => ps.map(p => p.id===procId ? {...p, comentarios:[...(p.comentarios||[]), comentario]} : p))
 
   // Colaboradores
   const handleColabAdd    = data => setColaboradores(cs => [...cs, { id:nextColabId++, ...data }])
@@ -1214,18 +1456,26 @@ export default function App() {
   const handleConsultorUpdate = (id,data) => setConsultores(cs => cs.map(c => c.id===id ? {...c,...data} : c))
   const handleConsultorDelete = id  => setConsultores(cs => cs.filter(c => c.id!==id))
 
+  if (!user) return <LoginScreen onLogin={handleLogin} />
+
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'#f0f2f0' }}>
-      <Sidebar tab={tab} setTab={setTab} />
+      <Sidebar tab={tab} setTab={setTab} user={user} onLogout={handleLogout} />
       <main style={{ flex:1, padding:'1.5rem', overflowY:'auto', minWidth:0 }}>
         {tab==='dashboard'     && <Dashboard meetings={meetings} processes={processes} />}
         {tab==='agenda'        && <Agenda meetings={meetings} colaboradores={colaboradores} onToggle={handleMeetingToggle} onAdd={handleAddMeeting} onUpdate={handleUpdateMeeting} onDelete={handleDeleteMeeting} />}
+        {tab==='levantamento'  && (
+          <Levantamento
+            consultores={consultores} colaboradores={colaboradores}
+            onAdd={handleProcAdd} onGoProcessos={() => setTab('processos')}
+          />
+        )}
         {tab==='processos'     && (
           <Processos
             processes={processes} consultores={consultores} colaboradores={colaboradores}
             onToggle={handleProcToggle} onConfirm={handleConfirm}
             onAdd={handleProcAdd} onUpdate={handleProcUpdate} onDelete={handleProcDelete}
-            onAddMeeting={handleAddMeeting}
+            onAddMeeting={handleAddMeeting} user={user} onAddComment={handleAddComment}
           />
         )}
         {tab==='configuracoes' && (
