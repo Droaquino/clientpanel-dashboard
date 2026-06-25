@@ -382,6 +382,12 @@ function AgendaDia({ meetings, viewDate, onToggle }) {
                 <div style={{ fontSize:12, fontWeight:500, color: m.canceled ? '#aaa' : c.txt, textDecoration: m.canceled ? 'line-through' : 'none' }}>{m.title}</div>
                 <div style={{ fontSize:11, color: m.canceled ? '#bbb' : c.brd, marginTop:2 }}>{p2(m.sh)}:{p2(m.sm)} – {p2(m.eh)}:{p2(m.em)}</div>
                 <div style={{ fontSize:11, color: m.canceled ? '#bbb' : c.brd }}>👤 {m.who}</div>
+                {m.meetLink && !m.canceled && (
+                  <a href={m.meetLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                    style={{ marginTop:5, display:'inline-flex', alignItems:'center', gap:4, fontSize:10, fontWeight:500, color:'#fff', background:'#1a73e8', padding:'3px 9px', borderRadius:99, textDecoration:'none' }}>
+                    🎥 Entrar no Meet
+                  </a>
+                )}
               </div>
             )
           })}
@@ -429,8 +435,16 @@ function AgendaSemana({ meetings, viewDate, onToggle }) {
                   return (
                     <div key={m.id} onClick={() => onToggle(m.id)} title={m.canceled?'Reativar':'Cancelar'}
                       style={{ position:'absolute', top:top+2, left:2, right:2, height:ht-4, background: m.canceled ? '#f5f5f5' : c.bg, border:`1px solid ${m.canceled ? '#ddd' : c.brd}`, borderRadius:6, padding:'3px 5px', cursor:'pointer', overflow:'hidden', opacity: m.canceled ? .5 : 1 }}>
-                      <div style={{ fontSize:10, fontWeight:500, color: m.canceled ? '#aaa' : c.txt, textDecoration: m.canceled?'line-through':'none', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{m.title}</div>
+                      <div style={{ fontSize:10, fontWeight:500, color: m.canceled ? '#aaa' : c.txt, textDecoration: m.canceled?'line-through':'none', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                        {m.meetLink && !m.canceled && <span style={{ marginRight:3 }}>🎥</span>}{m.title}
+                      </div>
                       {ht>36 && <div style={{ fontSize:9, color: m.canceled ? '#bbb' : c.brd, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{p2(m.sh)}:{p2(m.sm)}–{p2(m.eh)}:{p2(m.em)}</div>}
+                      {ht>52 && m.meetLink && !m.canceled && (
+                        <a href={m.meetLink} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}
+                          style={{ fontSize:8, color:'#1a73e8', textDecoration:'none', display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          Entrar no Meet
+                        </a>
+                      )}
                     </div>
                   )
                 })}
@@ -613,6 +627,12 @@ function Dashboard({ meetings, processes }) {
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:12, fontWeight:500, color:'#111', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{m.title}</div>
                   <div style={{ fontSize:10, color:'#888' }}>{p2(m.sh)}:{p2(m.sm)} – {p2(m.eh)}:{p2(m.em)} · {m.who}</div>
+                  {m.meetLink && (
+                    <a href={m.meetLink} target="_blank" rel="noopener noreferrer"
+                      style={{ fontSize:10, color:'#1a73e8', textDecoration:'none', display:'inline-flex', alignItems:'center', gap:3, marginTop:2 }}>
+                      🎥 Entrar no Meet
+                    </a>
+                  )}
                 </div>
                 {isToday && <span style={{ fontSize:9, padding:'2px 7px', borderRadius:99, background:BRAND_LIGHT, color:BRAND, fontWeight:500 }}>Hoje</span>}
               </div>
@@ -626,10 +646,13 @@ function Dashboard({ meetings, processes }) {
 // ─── Schedule form ────────────────────────────────────────────
 function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel }) {
   const todayYMD = toYMD(new Date())
-  const [date,  setDate ] = useState(todayYMD)
-  const [start, setStart] = useState('09:00')
-  const [end,   setEnd  ] = useState('10:00')
-  const [who,   setWho  ] = useState(defaultWho)
+  const [date,    setDate   ] = useState(todayYMD)
+  const [start,   setStart  ] = useState('09:00')
+  const [end,     setEnd    ] = useState('10:00')
+  const [who,     setWho    ] = useState(defaultWho)
+  const [loading, setLoading] = useState(false)
+  const [apiErr,  setApiErr ] = useState(null)
+  const [success, setSuccess] = useState(null) // { meetLink, eventLink }
 
   const [sh,sm] = start.split(':').map(Number)
   const [eh,em] = end.split(':').map(Number)
@@ -638,11 +661,62 @@ function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel
   const selDt     = date ? fromYMD(date) : null
   const dayLabel  = selDt ? `${DAY_PT[selDt.getDay()]}, ${selDt.getDate()} de ${MONTH_PT[selDt.getMonth()]}` : ''
 
+  async function handleSave() {
+    if (!valid || loading) return
+    setLoading(true)
+    setApiErr(null)
+    let meetLink = null, eventLink = null
+
+    try {
+      const res  = await fetch('/api/create-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: processName, processName, date, sh, sm, eh, em, who }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Erro desconhecido')
+      meetLink  = json.meetLink
+      eventLink = json.eventLink
+      setSuccess({ meetLink, eventLink })
+    } catch (err) {
+      setApiErr(err.message)
+    } finally {
+      setLoading(false)
+    }
+
+    // save locally regardless (with or without meet link)
+    onSave({ date, sh, sm, eh, em, who, meetLink, eventLink })
+  }
+
   return (
     <div style={{ marginTop:10, padding:'12px 14px', background:'#F0F7F3', border:`1px solid ${BRAND_BRD}`, borderRadius:10 }}>
       <div style={{ fontSize:11, fontWeight:500, color:BRAND, marginBottom:10 }}>
         📅 Agendar reunião — <span style={{ fontWeight:400, color:BRAND_MID }}>{processName}</span>
       </div>
+
+      {/* success banner */}
+      {success && (
+        <div style={{ background:'#EBF4EF', border:`0.5px solid ${BRAND_BRD}`, borderRadius:8, padding:'8px 10px', marginBottom:10, display:'flex', alignItems:'center', gap:8 }}>
+          <span style={{ fontSize:14 }}>✅</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:11, fontWeight:500, color:BRAND }}>Evento criado no Google Calendar!</div>
+            {success.meetLink && (
+              <a href={success.meetLink} target="_blank" rel="noopener noreferrer"
+                style={{ fontSize:11, color:'#1a73e8', display:'inline-flex', alignItems:'center', gap:4, marginTop:2 }}>
+                🎥 Entrar no Google Meet
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* error banner */}
+      {apiErr && (
+        <div style={{ background:'#FCEBEB', border:'0.5px solid #F7C1C1', borderRadius:8, padding:'7px 10px', marginBottom:10, fontSize:11, color:'#791F1F' }}>
+          ⚠️ Google Calendar: {apiErr} — reunião salva localmente.
+        </div>
+      )}
+
       <div style={{ marginBottom:8 }}>
         <label style={labelSt}>Data {dayLabel && <span style={{ color:BRAND_MID, fontWeight:500 }}>· {dayLabel}</span>}</label>
         <input type="date" value={date} min={todayYMD} onChange={e => setDate(e.target.value)} style={{ ...inputSt, padding:'5px 8px' }} />
@@ -668,11 +742,19 @@ function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel
         </datalist>
       </div>
       <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
-        <button onClick={onCancel} style={{ fontSize:11, padding:'5px 12px', border:'0.5px solid #ccc', borderRadius:6, cursor:'pointer', background:'#fff', color:'#666' }}>Cancelar</button>
-        <button onClick={() => valid && onSave({ date, sh, sm, eh, em, who })} style={{
-          fontSize:11, padding:'5px 14px', borderRadius:6, fontWeight:500,
-          border:`0.5px solid ${valid ? BRAND : '#ccc'}`, background: valid ? BRAND : '#ccc', color:'#fff', cursor: valid ? 'pointer' : 'not-allowed',
-        }}>✓ Adicionar à agenda</button>
+        <button onClick={onCancel} style={{ fontSize:11, padding:'5px 12px', border:'0.5px solid #ccc', borderRadius:6, cursor:'pointer', background:'#fff', color:'#666' }}>
+          {success ? 'Fechar' : 'Cancelar'}
+        </button>
+        {!success && (
+          <button onClick={handleSave} disabled={!valid || loading} style={{
+            fontSize:11, padding:'5px 14px', borderRadius:6, fontWeight:500, display:'flex', alignItems:'center', gap:5,
+            border:`0.5px solid ${valid && !loading ? BRAND : '#ccc'}`,
+            background: valid && !loading ? BRAND : '#ccc', color:'#fff',
+            cursor: valid && !loading ? 'pointer' : 'not-allowed',
+          }}>
+            {loading ? '⏳ Criando evento…' : '🎥 Agendar + Google Meet'}
+          </button>
+        )}
       </div>
     </div>
   )
