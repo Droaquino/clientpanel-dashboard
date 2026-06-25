@@ -370,7 +370,7 @@ function AgendaDia({ meetings, viewDate, onToggle }) {
         <div style={{ flex:1, position:'relative', height:totalH, borderLeft:'0.5px solid #eee' }}>
           {HOURS.map(h => <div key={h} style={{ position:'absolute', top:(h-DAY_START)*HOUR_H, left:0, right:0, borderTop:'0.5px solid #f0f0f0', height:HOUR_H }} />)}
           {evs.map(m => {
-            const c   = EV_COLORS[m.ci%5]
+            const c   = EV_COLORS[(m.ci??0)%5]
             const top = ((m.sh-DAY_START)+m.sm/60)*HOUR_H
             const ht  = Math.max(((m.eh-m.sh)+(m.em-m.sm)/60)*HOUR_H, 32)
             return (
@@ -429,7 +429,7 @@ function AgendaSemana({ meetings, viewDate, onToggle }) {
               <div key={di} style={{ flex:1, borderLeft:'0.5px solid #e2e8e4', position:'relative', height:totalH, background: isToday ? '#FAFCFA' : 'transparent' }}>
                 {HOURS.map(h => <div key={h} style={{ position:'absolute', top:(h-DAY_START)*HOUR_H, left:0, right:0, borderTop:'0.5px solid #f0f0f0', height:HOUR_H }} />)}
                 {meetings.filter(m => m.date===ymd).map(m => {
-                  const c   = EV_COLORS[m.ci%5]
+                  const c   = EV_COLORS[(m.ci??0)%5]
                   const top = ((m.sh-DAY_START)+m.sm/60)*HOUR_H
                   const ht  = Math.max(((m.eh-m.sh)+(m.em-m.sm)/60)*HOUR_H, 28)
                   return (
