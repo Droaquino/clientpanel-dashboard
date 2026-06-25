@@ -133,7 +133,7 @@ function Sidebar({ tab, setTab }) {
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <div style={{ width:32, height:32, background:'rgba(255,255,255,.15)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, color:'#fff' }}>⊞</div>
           <div>
-            <div style={{ fontSize:13, fontWeight:500, color:'#fff' }}>ClientPanel</div>
+            <div style={{ fontSize:13, fontWeight:500, color:'#fff' }}>Painel de Controle</div>
             <div style={{ fontSize:10, color:'rgba(255,255,255,.5)' }}>DF Turismo</div>
           </div>
         </div>

@@ -30,12 +30,12 @@ export default async function handler(req, res) {
       calendarId: 'primary',
       conferenceDataVersion: 1,
       requestBody: {
-        summary: title || processName,
+        summary: 'Reunião de Coleta | DF Turismo',
         description: [
           processName ? `Processo: ${processName}` : null,
           who         ? `Participante: ${who}` : null,
           '',
-          'Agendado via ClientPanel — DF Turismo',
+          'Agendado via Painel de Controle — DF Turismo',
         ].filter(l => l !== null).join('\n'),
         start: { dateTime: `${date}T${pad(sh)}:${pad(sm)}:00`, timeZone: tz },
         end:   { dateTime: `${date}T${pad(eh)}:${pad(em)}:00`, timeZone: tz },
