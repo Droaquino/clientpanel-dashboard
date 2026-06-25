@@ -684,8 +684,11 @@ function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel
       setLoading(false)
     }
 
-    // save locally regardless (with or without meet link)
-    onSave({ date, sh, sm, eh, em, who, meetLink, eventLink })
+    // if API failed, save locally immediately so meeting isn't lost
+    if (!meetLink) {
+      onSave({ date, sh, sm, eh, em, who, meetLink: null, eventLink: null })
+    }
+    // if API succeeded, onSave is called when user clicks Fechar (see button below)
   }
 
   return (
@@ -742,7 +745,8 @@ function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel
         </datalist>
       </div>
       <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
-        <button onClick={onCancel} style={{ fontSize:11, padding:'5px 12px', border:'0.5px solid #ccc', borderRadius:6, cursor:'pointer', background:'#fff', color:'#666' }}>
+        <button onClick={() => success ? onSave({ date, sh, sm, eh, em, who, meetLink: success.meetLink, eventLink: success.eventLink }) : onCancel()}
+          style={{ fontSize:11, padding:'5px 12px', border:'0.5px solid #ccc', borderRadius:6, cursor:'pointer', background:'#fff', color:'#666' }}>
           {success ? 'Fechar' : 'Cancelar'}
         </button>
         {!success && (
