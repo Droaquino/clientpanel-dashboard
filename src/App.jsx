@@ -353,7 +353,7 @@ function CalNavBar({ label, onPrev, onNext, onToday, mode, setMode }) {
 }
 
 // ─── Day view ─────────────────────────────────────────────────
-function AgendaDia({ meetings, viewDate, onToggle }) {
+function AgendaDia({ meetings, viewDate, onToggle, onEdit, onNew }) {
   const ymd    = toYMD(viewDate)
   const evs    = meetings.filter(m => m.date===ymd)
   const totalH = HOURS.length * HOUR_H
@@ -374,7 +374,7 @@ function AgendaDia({ meetings, viewDate, onToggle }) {
             const top = ((m.sh-DAY_START)+m.sm/60)*HOUR_H
             const ht  = Math.max(((m.eh-m.sh)+(m.em-m.sm)/60)*HOUR_H, 32)
             return (
-              <div key={m.id} onClick={() => onToggle(m.id)} style={{
+              <div key={m.id} onClick={() => onEdit && onEdit(m)} style={{
                 position:'absolute', top:top+2, left:6, right:6, height:ht-4,
                 background: m.canceled ? '#f5f5f5' : c.bg, border:`1px solid ${m.canceled ? '#ddd' : c.brd}`,
                 borderRadius:8, padding:'5px 10px', cursor:'pointer', opacity: m.canceled ? .5 : 1,
@@ -391,6 +391,7 @@ function AgendaDia({ meetings, viewDate, onToggle }) {
               </div>
             )
           })}
+          <div onClick={() => onNew && onNew(ymd)} style={{ position:'absolute', bottom:8, right:8, width:28, height:28, borderRadius:'50%', background:BRAND, color:'#fff', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 2px 8px rgba(0,0,0,.2)', userSelect:'none' }} title="Novo evento">＋</div>
         </div>
       </div>
     </div>
@@ -398,7 +399,7 @@ function AgendaDia({ meetings, viewDate, onToggle }) {
 }
 
 // ─── Week view ────────────────────────────────────────────────
-function AgendaSemana({ meetings, viewDate, onToggle }) {
+function AgendaSemana({ meetings, viewDate, onToggle, onEdit, onNew }) {
   const mon    = weekMon(viewDate)
   const cols   = Array.from({ length:5 }, (_, i) => addDays(mon, i))
   const totalH = HOURS.length * HOUR_H
@@ -433,7 +434,7 @@ function AgendaSemana({ meetings, viewDate, onToggle }) {
                   const top = ((m.sh-DAY_START)+m.sm/60)*HOUR_H
                   const ht  = Math.max(((m.eh-m.sh)+(m.em-m.sm)/60)*HOUR_H, 28)
                   return (
-                    <div key={m.id} onClick={() => onToggle(m.id)} title={m.canceled?'Reativar':'Cancelar'}
+                    <div key={m.id} onClick={() => onEdit ? onEdit(m) : onToggle(m.id)} title="Clique para editar"
                       style={{ position:'absolute', top:top+2, left:2, right:2, height:ht-4, background: m.canceled ? '#f5f5f5' : c.bg, border:`1px solid ${m.canceled ? '#ddd' : c.brd}`, borderRadius:6, padding:'3px 5px', cursor:'pointer', overflow:'hidden', opacity: m.canceled ? .5 : 1 }}>
                       <div style={{ fontSize:10, fontWeight:500, color: m.canceled ? '#aaa' : c.txt, textDecoration: m.canceled?'line-through':'none', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                         {m.meetLink && !m.canceled && <span style={{ marginRight:3 }}>🎥</span>}{m.title}
@@ -453,7 +454,7 @@ function AgendaSemana({ meetings, viewDate, onToggle }) {
           })}
         </div>
       </div>
-      <div style={{ padding:'.4rem .8rem', borderTop:'0.5px solid #eee', fontSize:10, color:'#bbb' }}>Clique em um evento para cancelar · clique novamente para reativar</div>
+      <div style={{ padding:'.4rem .8rem', borderTop:'0.5px solid #eee', fontSize:10, color:'#bbb' }}>Clique em um evento para editar</div>
     </div>
   )
 }
@@ -536,10 +537,12 @@ function AgendaAno({ meetings, viewDate, onToggle, onDrillMonth }) {
 }
 
 // ─── Agenda tab ───────────────────────────────────────────────
-function Agenda({ meetings, onToggle }) {
+function Agenda({ meetings, colaboradores, onAdd, onUpdate, onDelete, onToggle }) {
   const todayDt = new Date(); todayDt.setHours(12,0,0,0)
-  const [viewDate, setViewDate] = useState(todayDt)
-  const [mode,     setMode    ] = useState('semana')
+  const [viewDate,  setViewDate ] = useState(todayDt)
+  const [mode,      setMode     ] = useState('semana')
+  const [editingM,  setEditingM ] = useState(null)  // meeting object or 'new'
+  const [newDate,   setNewDate  ] = useState(null)
 
   function navLabel() {
     if (mode==='dia')    return `${DAY_PT[viewDate.getDay()]}, ${viewDate.getDate()} de ${MONTH_PT[viewDate.getMonth()]} de ${viewDate.getFullYear()}`
@@ -555,20 +558,50 @@ function Agenda({ meetings, onToggle }) {
   }
   function goToday() { const t=new Date(); t.setHours(12,0,0,0); setViewDate(t) }
 
+  function openNew(date) { setNewDate(date || toYMD(viewDate)); setEditingM('new') }
+  function openEdit(m)   { setEditingM(m) }
+  function closeForm()   { setEditingM(null); setNewDate(null) }
+
+  function handleSave(data) {
+    if (editingM === 'new') {
+      onAdd(data)
+    } else {
+      onUpdate(editingM.id, data)
+    }
+    closeForm()
+  }
+
   const upcoming = meetings.filter(m => !m.canceled && m.date >= toYMD(todayDt))
   const canceled = meetings.filter(m => m.canceled)
+
   return (
     <div>
-      <div style={{ fontSize:20, fontWeight:500, color:'#111', marginBottom:'.2rem' }}>Agenda</div>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'.2rem' }}>
+        <div style={{ fontSize:20, fontWeight:500, color:'#111' }}>Agenda</div>
+        <button onClick={() => openNew()} style={{
+          fontSize:12, padding:'6px 14px', borderRadius:7, fontWeight:500, cursor:'pointer',
+          border:`0.5px solid ${BRAND}`, background:BRAND, color:'#fff',
+        }}>＋ Novo evento</button>
+      </div>
       <div style={{ fontSize:12, color:'#888', marginBottom:'1rem' }}>
         {upcoming.length} reunião(ões) futura(s)
         {canceled.length>0 && <span style={{ marginLeft:10, color:'#A32D2D' }}>· {canceled.length} cancelada(s)</span>}
       </div>
       <CalNavBar label={navLabel()} onPrev={() => navigate(-1)} onNext={() => navigate(1)} onToday={goToday} mode={mode} setMode={setMode} />
-      {mode==='dia'    && <AgendaDia    meetings={meetings} viewDate={viewDate} onToggle={onToggle} />}
-      {mode==='semana' && <AgendaSemana meetings={meetings} viewDate={viewDate} onToggle={onToggle} />}
-      {mode==='mês'    && <AgendaMes    meetings={meetings} viewDate={viewDate} onToggle={onToggle} onDrillDay={dt => { setViewDate(dt); setMode('dia') }} />}
+      {mode==='dia'    && <AgendaDia    meetings={meetings} viewDate={viewDate} onToggle={onToggle} onEdit={openEdit} onNew={openNew} />}
+      {mode==='semana' && <AgendaSemana meetings={meetings} viewDate={viewDate} onToggle={onToggle} onEdit={openEdit} onNew={openNew} />}
+      {mode==='mês'    && <AgendaMes    meetings={meetings} viewDate={viewDate} onToggle={onToggle} onEdit={openEdit} onDrillDay={dt => { setViewDate(dt); setMode('dia') }} />}
       {mode==='ano'    && <AgendaAno    meetings={meetings} viewDate={viewDate} onToggle={onToggle} onDrillMonth={dt => { setViewDate(dt); setMode('mês') }} />}
+
+      {editingM && (
+        <EventForm
+          initial={editingM === 'new' ? { date: newDate } : editingM}
+          colaboradores={colaboradores}
+          onSave={handleSave}
+          onCancel={closeForm}
+          onDelete={editingM !== 'new' ? () => { onDelete(editingM.id); closeForm() } : null}
+        />
+      )}
     </div>
   )
 }
@@ -638,6 +671,146 @@ function Dashboard({ meetings, processes }) {
               </div>
             )
           })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Event Form (create / edit from Agenda) ──────────────────
+function EventForm({ initial, colaboradores, onSave, onCancel, onDelete }) {
+  const todayYMD = toYMD(new Date())
+  const isEdit   = !!initial?.id
+
+  const [title,    setTitle   ] = useState(initial?.title    || 'Reunião de Coleta | DF Turismo')
+  const [date,     setDate    ] = useState(initial?.date     || todayYMD)
+  const [start,    setStart   ] = useState(initial ? `${p2(initial.sh)}:${p2(initial.sm)}` : '09:00')
+  const [end,      setEnd     ] = useState(initial ? `${p2(initial.eh)}:${p2(initial.em)}` : '10:00')
+  const [who,      setWho     ] = useState(initial?.who      || '')
+  const [desc,     setDesc    ] = useState(initial?.desc     || '')
+  const [meetLink, setMeetLink] = useState(initial?.meetLink || '')
+  const [loading,  setLoading ] = useState(false)
+  const [apiErr,   setApiErr  ] = useState(null)
+  const [success,  setSuccess ] = useState(null)
+
+  const [sh,sm] = start.split(':').map(Number)
+  const [eh,em] = end.split(':').map(Number)
+  const validTime = eh*60+em > sh*60+sm
+  const valid     = title.trim() && date && validTime
+
+  async function handleSave() {
+    if (!valid || loading) return
+    setLoading(true); setApiErr(null)
+    let ml = meetLink, el = initial?.eventLink || null
+
+    if (!isEdit) {
+      try {
+        const res  = await fetch('/api/create-event', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ title, processName: desc, date, sh, sm, eh, em, who }),
+        })
+        const json = await res.json()
+        if (!res.ok) throw new Error(json.error || 'Erro desconhecido')
+        ml = json.meetLink; el = json.eventLink
+        setSuccess({ meetLink: ml, eventLink: el })
+      } catch (err) { setApiErr(err.message) }
+    }
+    setLoading(false)
+    if (isEdit || !ml) {
+      onSave({ title, date, sh, sm, eh, em, who, desc, meetLink: ml||null, eventLink: el })
+    }
+  }
+
+  const selDt   = date ? fromYMD(date) : null
+  const dayLabel = selDt ? `${DAY_PT[selDt.getDay()]}, ${selDt.getDate()} de ${MONTH_PT[selDt.getMonth()]}` : ''
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.35)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }}>
+      <div style={{ background:'#fff', borderRadius:14, padding:'1.25rem 1.5rem', width:420, maxWidth:'95vw', maxHeight:'90vh', overflowY:'auto', boxShadow:'0 8px 40px rgba(0,0,0,.18)' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem' }}>
+          <div style={{ fontSize:14, fontWeight:600, color:BRAND }}>{isEdit ? '✏️ Editar evento' : '＋ Novo evento'}</div>
+          <button onClick={onCancel} style={{ border:'none', background:'none', fontSize:18, cursor:'pointer', color:'#999', lineHeight:1 }}>×</button>
+        </div>
+
+        {success && (
+          <div style={{ background:'#EBF4EF', border:`0.5px solid ${BRAND_BRD}`, borderRadius:8, padding:'8px 10px', marginBottom:10, fontSize:11 }}>
+            ✅ <strong>Evento criado no Google Calendar!</strong>
+            {success.meetLink && <> · <a href={success.meetLink} target="_blank" rel="noopener noreferrer" style={{ color:'#1a73e8' }}>🎥 Entrar no Meet</a></>}
+          </div>
+        )}
+        {apiErr && (
+          <div style={{ background:'#FCEBEB', border:'0.5px solid #F7C1C1', borderRadius:8, padding:'7px 10px', marginBottom:10, fontSize:11, color:'#791F1F' }}>
+            ⚠️ Google Calendar: {apiErr} — evento salvo localmente.
+          </div>
+        )}
+
+        <div style={{ marginBottom:8 }}>
+          <label style={labelSt}>Título do evento</label>
+          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Reunião de Coleta | DF Turismo"
+            style={{ ...inputSt, padding:'6px 10px' }} />
+        </div>
+        <div style={{ marginBottom:8 }}>
+          <label style={labelSt}>Data {dayLabel && <span style={{ color:BRAND_MID, fontWeight:500 }}>· {dayLabel}</span>}</label>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ ...inputSt, padding:'6px 10px' }} />
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
+          <div>
+            <label style={labelSt}>Início</label>
+            <input type="time" value={start} onChange={e => setStart(e.target.value)} style={{ ...inputSt, padding:'6px 10px' }} />
+          </div>
+          <div>
+            <label style={labelSt}>Término</label>
+            <input type="time" value={end} onChange={e => setEnd(e.target.value)}
+              style={{ ...inputSt, padding:'6px 10px', borderColor: !validTime&&end ? '#E24B4A':'#ccc' }} />
+            {!validTime && end && <div style={{ fontSize:9, color:'#E24B4A', marginTop:2 }}>Término após o início</div>}
+          </div>
+        </div>
+        <div style={{ marginBottom:8 }}>
+          <label style={labelSt}>Participante(s)</label>
+          <input list="ef-colab-list" value={who} onChange={e => setWho(e.target.value)} placeholder="Nome do participante"
+            style={{ ...inputSt, padding:'6px 10px' }} />
+          <datalist id="ef-colab-list">{colaboradores.map(c => <option key={c.id} value={c.nome} />)}</datalist>
+        </div>
+        <div style={{ marginBottom:8 }}>
+          <label style={labelSt}>Descrição / Processo</label>
+          <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Descrição opcional"
+            rows={2} style={{ ...inputSt, padding:'6px 10px', resize:'vertical', fontFamily:'inherit' }} />
+        </div>
+        <div style={{ marginBottom:14 }}>
+          <label style={labelSt}>Link do Meet (opcional)</label>
+          <input value={meetLink} onChange={e => setMeetLink(e.target.value)} placeholder="https://meet.google.com/..."
+            style={{ ...inputSt, padding:'6px 10px' }} />
+        </div>
+
+        <div style={{ display:'flex', gap:6, justifyContent:'space-between', alignItems:'center' }}>
+          <div>
+            {isEdit && onDelete && (
+              <button onClick={onDelete} style={{ fontSize:11, padding:'5px 12px', border:'0.5px solid #E24B4A', borderRadius:6, cursor:'pointer', background:'#fff', color:'#E24B4A' }}>
+                🗑 Excluir
+              </button>
+            )}
+          </div>
+          <div style={{ display:'flex', gap:6 }}>
+            <button onClick={onCancel} style={{ fontSize:11, padding:'5px 12px', border:'0.5px solid #ccc', borderRadius:6, cursor:'pointer', background:'#fff', color:'#666' }}>
+              {success ? 'Fechar' : 'Cancelar'}
+            </button>
+            {!success && (
+              <button onClick={handleSave} disabled={!valid || loading} style={{
+                fontSize:11, padding:'5px 16px', borderRadius:6, fontWeight:500,
+                border:`0.5px solid ${valid&&!loading ? BRAND:'#ccc'}`,
+                background: valid&&!loading ? BRAND:'#ccc', color:'#fff',
+                cursor: valid&&!loading ? 'pointer':'not-allowed',
+              }}>
+                {loading ? '⏳ Criando…' : isEdit ? '✓ Salvar alterações' : '🎥 Criar + Google Meet'}
+              </button>
+            )}
+            {success && (
+              <button onClick={() => onSave({ title, date, sh, sm, eh, em, who, desc, meetLink: success.meetLink, eventLink: success.eventLink })}
+                style={{ fontSize:11, padding:'5px 16px', borderRadius:6, fontWeight:500, border:`0.5px solid ${BRAND}`, background:BRAND, color:'#fff', cursor:'pointer' }}>
+                Fechar
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -1019,8 +1192,10 @@ export default function App() {
   const [consultores,  setConsultores ] = useState(initConsultores)
 
   // Meetings
-  const handleMeetingToggle = id => setMeetings(ms => ms.map(m => m.id===id ? {...m, canceled:!m.canceled} : m))
-  const handleAddMeeting    = data => { setMeetings(ms => [...ms, { id:nextMeetingId++, canceled:false, ...data }]); setTab('agenda') }
+  const handleMeetingToggle = id   => setMeetings(ms => ms.map(m => m.id===id ? {...m, canceled:!m.canceled} : m))
+  const handleAddMeeting    = data => { setMeetings(ms => [...ms, { id:nextMeetingId++, canceled:false, ci:nextMeetingId%5, ...data }]); setTab('agenda') }
+  const handleUpdateMeeting = (id,data) => setMeetings(ms => ms.map(m => m.id===id ? {...m, ...data} : m))
+  const handleDeleteMeeting = id   => setMeetings(ms => ms.filter(m => m.id!==id))
 
   // Processes
   const handleProcToggle = (id,key) => setProcesses(ps => ps.map(p => p.id===id && !p.confirmed ? {...p, [key]:!p[key]} : p))
@@ -1044,7 +1219,7 @@ export default function App() {
       <Sidebar tab={tab} setTab={setTab} />
       <main style={{ flex:1, padding:'1.5rem', overflowY:'auto', minWidth:0 }}>
         {tab==='dashboard'     && <Dashboard meetings={meetings} processes={processes} />}
-        {tab==='agenda'        && <Agenda meetings={meetings} onToggle={handleMeetingToggle} />}
+        {tab==='agenda'        && <Agenda meetings={meetings} colaboradores={colaboradores} onToggle={handleMeetingToggle} onAdd={handleAddMeeting} onUpdate={handleUpdateMeeting} onDelete={handleDeleteMeeting} />}
         {tab==='processos'     && (
           <Processos
             processes={processes} consultores={consultores} colaboradores={colaboradores}
