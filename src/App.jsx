@@ -56,9 +56,199 @@ const USERS = [
   { id:5, nome:'Visitante',    role:'cliente',     cargo:'Cliente',      senha:'cliente2024', grupo:'cliente' },
 ]
 
-function LoginScreen({ onLogin }) {
+// ─── localStorage helpers ─────────────────────────────────────
+function getPending()  { try { return JSON.parse(localStorage.getItem('pcPending')  || '[]') } catch { return [] } }
+function getApproved() { try { return JSON.parse(localStorage.getItem('pcApproved') || '[]') } catch { return [] } }
+function getInvites()  { try { return JSON.parse(localStorage.getItem('pcInvites')  || '[]') } catch { return [] } }
+function setPending(v)  { localStorage.setItem('pcPending',  JSON.stringify(v)) }
+function setApproved(v) { localStorage.setItem('pcApproved', JSON.stringify(v)) }
+function setInvites(v)  { localStorage.setItem('pcInvites',  JSON.stringify(v)) }
+
+function senhaFromTel(tel) {
+  return (tel.replace(/\D/g,'').slice(0,4))
+}
+
+function findUser(id, senha) {
+  // Check hardcoded users first (by id number from gestao select)
+  const hardU = USERS.find(x => x.id === Number(id))
+  if (hardU && hardU.senha === senha) return hardU
+  // Check approved users (by email or nome used as id)
+  const approved = getApproved()
+  const appU = approved.find(x => x.email === id || x.nome === id)
+  if (appU && senhaFromTel(appU.telefone) === senha) {
+    return { id: appU.id, nome: appU.nome, role: appU.role, cargo: appU.role, grupo: appU.grupo, email: appU.email }
+  }
+  return null
+}
+
+// ─── CadastroScreen ───────────────────────────────────────────
+function CadastroScreen({ onBack, inviteToken }) {
+  const invites    = getInvites()
+  const inviteData = inviteToken ? invites.find(i => i.token === inviteToken) : null
+  const lockedRole = inviteData?.role || null
+
+  const [nome,      setNome     ] = useState('')
+  const [email,     setEmail    ] = useState('')
+  const [telefone,  setTelefone ] = useState('')
+  const [grupo,     setGrupo    ] = useState('cliente')
+  const [role,      setRole     ] = useState(lockedRole || 'socio')
+  const [cargo,     setCargo    ] = useState('Coordenador')
+  const [area,      setArea     ] = useState('')
+  const [cargoFunc, setCargoFunc] = useState('')
+  const [success,   setSuccess  ] = useState(false)
+  const [err,       setErr      ] = useState('')
+
+  // sync role lock from invite
+  useEffect(() => {
+    if (lockedRole) {
+      setRole(lockedRole)
+      if (lockedRole === 'consultor' || lockedRole === 'coordenador') setGrupo('gestao')
+      else setGrupo('cliente')
+    }
+  }, [lockedRole])
+
+  function handleGrupo(g) {
+    setGrupo(g)
+    if (!lockedRole) setRole(g === 'gestao' ? 'coordenador' : 'socio')
+  }
+
+  function handleSubmit() {
+    setErr('')
+    if (!nome.trim() || !email.trim() || !telefone.trim()) { setErr('Preencha todos os campos obrigatórios.'); return }
+    if (role === 'colaborador' && (!area.trim() || !cargoFunc.trim())) { setErr('Preencha Área e Cargo/Função.'); return }
+    const pending = getPending()
+    pending.push({
+      id: Date.now(),
+      nome: nome.trim(), email: email.trim(), telefone: telefone.trim(),
+      grupo,
+      role: grupo === 'gestao' ? (cargo === 'Coordenador' ? 'coordenador' : 'consultor') : role,
+      cargo: grupo === 'gestao' ? cargo : (role === 'socio' ? 'Sócio' : cargoFunc),
+      area: role === 'colaborador' ? area.trim() : '',
+      status: 'pendente',
+      inviteToken: inviteToken || null,
+      dataSolicitacao: new Date().toISOString(),
+    })
+    setPending(pending)
+    // mark invite as used
+    if (inviteToken) {
+      const upd = getInvites().map(i => i.token === inviteToken ? { ...i, status:'usado' } : i)
+      setInvites(upd)
+    }
+    setSuccess(true)
+  }
+
+  if (success) return (
+    <div style={{ minHeight:'100vh', background:`linear-gradient(135deg, ${BRAND} 0%, ${BRAND_MID} 100%)`, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}>
+      <div style={{ background:'#fff', borderRadius:18, padding:'2rem', width:400, maxWidth:'95vw', textAlign:'center', boxShadow:'0 16px 60px rgba(0,0,0,.25)' }}>
+        <div style={{ fontSize:40, marginBottom:12 }}>✅</div>
+        <div style={{ fontSize:16, fontWeight:600, color:BRAND, marginBottom:8 }}>Solicitação enviada!</div>
+        <div style={{ fontSize:13, color:'#555', marginBottom:'1.5rem' }}>Aguarde a aprovação do coordenador.</div>
+        <button onClick={onBack} style={{ fontSize:13, padding:'8px 20px', borderRadius:8, border:`0.5px solid ${BRAND}`, background:BRAND, color:'#fff', cursor:'pointer' }}>Voltar ao login</button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div style={{ minHeight:'100vh', background:`linear-gradient(135deg, ${BRAND} 0%, ${BRAND_MID} 100%)`, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}>
+      <div style={{ background:'#fff', borderRadius:18, padding:'2rem', width:440, maxWidth:'95vw', maxHeight:'92vh', overflowY:'auto', boxShadow:'0 16px 60px rgba(0,0,0,.25)' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:'1.5rem' }}>
+          <button onClick={onBack} style={{ border:'none', background:'none', fontSize:18, cursor:'pointer', color:'#999', lineHeight:1, padding:0 }}>←</button>
+          <div>
+            <div style={{ fontSize:16, fontWeight:600, color:BRAND }}>Solicitar Cadastro</div>
+            <div style={{ fontSize:11, color:'#888' }}>Preencha os dados para solicitar acesso</div>
+          </div>
+        </div>
+
+        {inviteData && (
+          <div style={{ background:BRAND_LIGHT, border:`0.5px solid ${BRAND_BRD}`, borderRadius:8, padding:'8px 10px', marginBottom:12, fontSize:11, color:BRAND }}>
+            🔗 Convite válido — perfil pré-definido: <strong>{lockedRole}</strong>
+          </div>
+        )}
+
+        <div style={{ marginBottom:10 }}>
+          <label style={labelSt}>Nome completo <span style={{ color:'#E24B4A' }}>*</span></label>
+          <input style={inputSt} value={nome} onChange={e => setNome(e.target.value)} placeholder="Seu nome completo" />
+        </div>
+        <div style={{ marginBottom:10 }}>
+          <label style={labelSt}>E-mail <span style={{ color:'#E24B4A' }}>*</span></label>
+          <input style={inputSt} value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemplo.com" />
+        </div>
+        <div style={{ marginBottom:14 }}>
+          <label style={labelSt}>Telefone (com DDD) <span style={{ color:'#E24B4A' }}>*</span></label>
+          <input style={inputSt} value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(61) 9 9999-9999" />
+        </div>
+
+        <div style={{ marginBottom:12 }}>
+          <label style={labelSt}>Grupo <span style={{ color:'#E24B4A' }}>*</span></label>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+            {[['gestao','Grupo Gestão'],['cliente','Cliente']].map(([g,l]) => (
+              <button key={g} onClick={() => !lockedRole && handleGrupo(g)} style={{
+                padding:'10px', borderRadius:9, fontSize:12, fontWeight:500, cursor: lockedRole ? 'default' : 'pointer',
+                border: `1.5px solid ${grupo===g ? BRAND : '#ddd'}`,
+                background: grupo===g ? BRAND_LIGHT : '#fafafa',
+                color: grupo===g ? BRAND : '#666',
+                opacity: lockedRole && grupo!==g ? .5 : 1,
+              }}>{l}</button>
+            ))}
+          </div>
+        </div>
+
+        {grupo === 'gestao' && (
+          <div style={{ marginBottom:10 }}>
+            <label style={labelSt}>Cargo</label>
+            <select style={{ ...inputSt, cursor: lockedRole ? 'default' : 'pointer' }} value={cargo}
+              onChange={e => !lockedRole && setCargo(e.target.value)} disabled={!!lockedRole}>
+              <option value="Coordenador">Coordenador</option>
+              <option value="Consultor">Consultor</option>
+            </select>
+          </div>
+        )}
+
+        {grupo === 'cliente' && (
+          <div style={{ marginBottom:10 }}>
+            <label style={labelSt}>Tipo</label>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+              {[['socio','Sócio'],['colaborador','Colaborador']].map(([r,l]) => (
+                <button key={r} onClick={() => !lockedRole && setRole(r)} style={{
+                  padding:'9px', borderRadius:9, fontSize:12, fontWeight:500, cursor: lockedRole ? 'default' : 'pointer',
+                  border: `1.5px solid ${role===r ? BRAND : '#ddd'}`,
+                  background: role===r ? BRAND_LIGHT : '#fafafa',
+                  color: role===r ? BRAND : '#666',
+                  opacity: lockedRole && role!==r ? .5 : 1,
+                }}>{l}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {grupo === 'cliente' && role === 'colaborador' && (
+          <>
+            <div style={{ marginBottom:10 }}>
+              <label style={labelSt}>Área <span style={{ color:'#E24B4A' }}>*</span></label>
+              <input style={inputSt} value={area} onChange={e => setArea(e.target.value)} placeholder="Ex: Financeiro, RH…" />
+            </div>
+            <div style={{ marginBottom:10 }}>
+              <label style={labelSt}>Cargo/Função <span style={{ color:'#E24B4A' }}>*</span></label>
+              <input style={inputSt} value={cargoFunc} onChange={e => setCargoFunc(e.target.value)} placeholder="Ex: Analista, Supervisor…" />
+            </div>
+          </>
+        )}
+
+        {err && <div style={{ fontSize:11, color:'#A32D2D', marginBottom:8 }}>{err}</div>}
+
+        <button onClick={handleSubmit} style={{
+          width:'100%', padding:'9px', borderRadius:8, fontSize:13, fontWeight:500, marginTop:6,
+          background:BRAND, color:'#fff', border:'none', cursor:'pointer',
+        }}>Enviar Solicitação</button>
+      </div>
+    </div>
+  )
+}
+
+function LoginScreen({ onLogin, onCadastro }) {
   const [section,  setSection ] = useState('gestao')
   const [userId,   setUserId  ] = useState('')
+  const [clientEmail, setClientEmail] = useState('')
   const [clientType, setClientType] = useState('socio')
   const [clientName, setClientName] = useState('')
   const [senha,    setSenha   ] = useState('')
@@ -67,12 +257,26 @@ function LoginScreen({ onLogin }) {
   function doLogin() {
     setErr('')
     if (section === 'gestao') {
-      const u = USERS.find(x => x.id === Number(userId) && x.grupo === 'gestao')
-      if (!u) { setErr('Selecione um usuário.'); return }
-      if (u.senha !== senha) { setErr('Senha incorreta.'); return }
-      localStorage.setItem('pcUser', JSON.stringify(u))
-      onLogin(u)
+      // hardcoded users
+      if (userId) {
+        const u = USERS.find(x => x.id === Number(userId) && x.grupo === 'gestao')
+        if (!u) { setErr('Selecione um usuário.'); return }
+        if (u.senha !== senha) { setErr('Senha incorreta.'); return }
+        localStorage.setItem('pcUser', JSON.stringify(u))
+        onLogin(u); return
+      }
+      setErr('Selecione um usuário.'); return
     } else {
+      // Try approved users by email first
+      const approved = getApproved()
+      const appU = approved.find(x => x.email === clientEmail.trim() && x.grupo === 'cliente')
+      if (appU) {
+        if (senhaFromTel(appU.telefone) !== senha) { setErr('Senha incorreta.'); return }
+        const logged = { id: appU.id, nome: appU.nome, role: appU.role, cargo: appU.cargo, grupo: appU.grupo, email: appU.email }
+        localStorage.setItem('pcUser', JSON.stringify(logged))
+        onLogin(logged); return
+      }
+      // fallback to hardcoded
       const targetRole = clientType
       const u = USERS.find(x => x.role === targetRole && x.grupo === 'cliente')
       if (!u) { setErr('Tipo inválido.'); return }
@@ -118,7 +322,11 @@ function LoginScreen({ onLogin }) {
         ) : (
           <>
             <div style={{ marginBottom:10 }}>
-              <label style={labelSt}>Tipo de acesso</label>
+              <label style={labelSt}>E-mail</label>
+              <input style={inputSt} value={clientEmail} onChange={e => setClientEmail(e.target.value)} placeholder="email@exemplo.com" />
+            </div>
+            <div style={{ marginBottom:10 }}>
+              <label style={labelSt}>Tipo de acesso (demo)</label>
               <select style={{ ...inputSt, cursor:'pointer' }} value={clientType} onChange={e => setClientType(e.target.value)}>
                 <option value="socio">Sócio</option>
                 <option value="cliente">Cliente</option>
@@ -143,6 +351,13 @@ function LoginScreen({ onLogin }) {
           width:'100%', padding:'9px', borderRadius:8, fontSize:13, fontWeight:500,
           background:BRAND, color:'#fff', border:'none', cursor:'pointer',
         }}>Entrar</button>
+
+        <div style={{ textAlign:'center', marginTop:'1rem', paddingTop:'1rem', borderTop:'0.5px solid #eee' }}>
+          <span style={{ fontSize:11, color:'#888' }}>Não tem acesso? </span>
+          <button onClick={onCadastro} style={{ fontSize:11, color:BRAND_MID, background:'none', border:'none', cursor:'pointer', fontWeight:500, textDecoration:'underline', padding:0 }}>
+            Solicitar cadastro
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -402,11 +617,157 @@ function PeopleSection({ title, subtitle, type, people, onAdd, onUpdate, onDelet
   )
 }
 
-function Configuracoes({ colaboradores, consultores, onColabAdd, onColabUpdate, onColabDelete, onConsultorAdd, onConsultorUpdate, onConsultorDelete }) {
+function SolicitacoesPendentes() {
+  const [list, setList] = useState(() => getPending())
+
+  function refresh() { setList(getPending()) }
+
+  function aprovar(item) {
+    const approved = getApproved()
+    approved.push({ ...item, status:'aprovado', id: Date.now() })
+    setApproved(approved)
+    const upd = getPending().map(x => x.id === item.id ? { ...x, status:'aprovado' } : x)
+    setPending(upd)
+    refresh()
+  }
+
+  function rejeitar(id) {
+    const upd = getPending().map(x => x.id === id ? { ...x, status:'rejeitado' } : x)
+    setPending(upd)
+    refresh()
+  }
+
+  const pendentes = list.filter(x => x.status === 'pendente')
+  const outros    = list.filter(x => x.status !== 'pendente')
+
+  return (
+    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, overflow:'hidden', marginBottom:'1.25rem' }}>
+      <div style={{ padding:'1rem 1.25rem', background:ACCENT_LT, borderBottom:`0.5px solid ${ACCENT}40`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div>
+          <div style={{ fontSize:15, fontWeight:600, color:'#7A5F10' }}>Solicitações Pendentes</div>
+          <div style={{ fontSize:11, color:'#888', marginTop:2 }}>Aprovar ou rejeitar novos cadastros</div>
+        </div>
+        {pendentes.length > 0 && (
+          <span style={{ fontSize:12, fontWeight:700, color:'#fff', background:'#E24B4A', padding:'3px 10px', borderRadius:99 }}>{pendentes.length}</span>
+        )}
+      </div>
+      <div style={{ padding:'1rem' }}>
+        {pendentes.length === 0 && outros.length === 0 && (
+          <div style={{ textAlign:'center', padding:'1.5rem', fontSize:12, color:'#bbb' }}>Nenhuma solicitação ainda.</div>
+        )}
+        {pendentes.map(item => (
+          <div key={item.id} style={{ background:'#FAFCFA', border:`0.5px solid ${BRAND_BRD}`, borderRadius:10, padding:'.85rem 1rem', marginBottom:'.6rem' }}>
+            <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:13, fontWeight:500, color:'#111' }}>{item.nome}</div>
+                <div style={{ fontSize:11, color:'#555', marginTop:2 }}>{item.email} · {item.telefone}</div>
+                <div style={{ display:'flex', gap:6, marginTop:4, flexWrap:'wrap' }}>
+                  <span style={{ fontSize:10, padding:'2px 7px', borderRadius:99, background:BRAND_LIGHT, color:BRAND_MID }}>{item.grupo === 'gestao' ? 'Grupo Gestão' : 'Cliente'}</span>
+                  <span style={{ fontSize:10, padding:'2px 7px', borderRadius:99, background:'#f0f0f0', color:'#666' }}>{item.role}</span>
+                  {item.area && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:99, background:'#f0f0f0', color:'#666' }}>Área: {item.area}</span>}
+                  {item.cargo && item.grupo === 'cliente' && item.role === 'colaborador' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:99, background:'#f0f0f0', color:'#666' }}>{item.cargo}</span>}
+                </div>
+                <div style={{ fontSize:10, color:'#bbb', marginTop:3 }}>{new Date(item.dataSolicitacao).toLocaleString('pt-BR')}</div>
+              </div>
+              <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+                <button onClick={() => aprovar(item)} style={{ fontSize:11, padding:'5px 11px', border:`0.5px solid ${BRAND_MID}`, borderRadius:7, cursor:'pointer', background:BRAND_LIGHT, color:BRAND, fontWeight:500 }}>✅ Aprovar</button>
+                <button onClick={() => rejeitar(item.id)} style={{ fontSize:11, padding:'5px 11px', border:'0.5px solid #f5c6c6', borderRadius:7, cursor:'pointer', background:'#fff', color:'#A32D2D' }}>❌ Rejeitar</button>
+              </div>
+            </div>
+          </div>
+        ))}
+        {outros.length > 0 && (
+          <div style={{ marginTop:8 }}>
+            <div style={{ fontSize:11, color:'#bbb', marginBottom:6 }}>Histórico</div>
+            {outros.map(item => (
+              <div key={item.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'.6rem .9rem', background:'#fafafa', borderRadius:8, marginBottom:4, opacity:.7 }}>
+                <span style={{ fontSize:18 }}>{item.status === 'aprovado' ? '✅' : '❌'}</span>
+                <div style={{ flex:1, fontSize:11, color:'#555' }}>{item.nome} — {item.email}</div>
+                <span style={{ fontSize:10, padding:'2px 8px', borderRadius:99, background: item.status==='aprovado' ? BRAND_LIGHT : '#FCEBEB', color: item.status==='aprovado' ? BRAND_MID : '#A32D2D' }}>{item.status}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function GerarConvites() {
+  const [roleInv, setRoleInv] = useState('consultor')
+  const [invites, setInvitesState] = useState(() => getInvites())
+  const [copied, setCopied] = useState(null)
+  const BASE_URL = 'https://clientpanel-dashboard.vercel.app'
+
+  function gerarLink() {
+    const token = Math.random().toString(36).slice(2,10)
+    const upd = [...getInvites(), { token, role: roleInv, status:'ativo', criadoEm: new Date().toISOString() }]
+    setInvites(upd)
+    setInvitesState(upd)
+  }
+
+  function copyLink(token) {
+    const url = `${BASE_URL}?invite=${token}`
+    navigator.clipboard.writeText(url).then(() => { setCopied(token); setTimeout(() => setCopied(null), 2000) })
+  }
+
+  return (
+    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, overflow:'hidden', marginBottom:'1.25rem' }}>
+      <div style={{ padding:'1rem 1.25rem', background:BRAND_LIGHT, borderBottom:`0.5px solid ${BRAND_BRD}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div>
+          <div style={{ fontSize:15, fontWeight:600, color:BRAND }}>Gerar Link de Convite</div>
+          <div style={{ fontSize:11, color:'#888', marginTop:2 }}>Convide usuários com perfil pré-definido</div>
+        </div>
+      </div>
+      <div style={{ padding:'1rem' }}>
+        <div style={{ display:'flex', gap:8, marginBottom:'1rem', alignItems:'flex-end' }}>
+          <div style={{ flex:1 }}>
+            <label style={labelSt}>Função do convidado</label>
+            <select style={{ ...inputSt, cursor:'pointer' }} value={roleInv} onChange={e => setRoleInv(e.target.value)}>
+              <option value="consultor">Consultor</option>
+              <option value="socio">Sócio</option>
+              <option value="colaborador">Colaborador</option>
+            </select>
+          </div>
+          <button onClick={gerarLink} style={{ fontSize:12, padding:'7px 16px', borderRadius:8, border:`0.5px solid ${BRAND}`, background:BRAND, color:'#fff', cursor:'pointer', fontWeight:500, whiteSpace:'nowrap' }}>
+            🔗 Gerar Link
+          </button>
+        </div>
+
+        {invites.length === 0 && (
+          <div style={{ textAlign:'center', padding:'1rem', fontSize:12, color:'#bbb' }}>Nenhum convite gerado ainda.</div>
+        )}
+        {invites.map(inv => {
+          const url = `${BASE_URL}?invite=${inv.token}`
+          return (
+            <div key={inv.token} style={{ display:'flex', alignItems:'center', gap:8, padding:'.7rem .9rem', background:'#fafafa', border:'0.5px solid #e2e8e4', borderRadius:9, marginBottom:6 }}>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
+                  <span style={{ fontSize:10, padding:'2px 7px', borderRadius:99, background:BRAND_LIGHT, color:BRAND_MID, fontWeight:500 }}>{inv.role}</span>
+                  <span style={{ fontSize:10, padding:'2px 7px', borderRadius:99, background: inv.status==='usado' ? '#f0f0f0' : '#EBF4EF', color: inv.status==='usado' ? '#888' : BRAND_MID }}>{inv.status}</span>
+                </div>
+                <div style={{ fontSize:10, color:'#888', fontFamily:'monospace', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{url}</div>
+              </div>
+              <button onClick={() => copyLink(inv.token)} style={{ fontSize:11, padding:'5px 10px', border:`0.5px solid ${BRAND_BRD}`, borderRadius:7, cursor:'pointer', background: copied===inv.token ? BRAND_LIGHT : '#fff', color: copied===inv.token ? BRAND : '#555', whiteSpace:'nowrap', flexShrink:0 }}>
+                {copied===inv.token ? '✓ Copiado' : '📋 Copiar'}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function Configuracoes({ colaboradores, consultores, onColabAdd, onColabUpdate, onColabDelete, onConsultorAdd, onConsultorUpdate, onConsultorDelete, user }) {
+  const isCoord = user?.role === 'coordenador'
   return (
     <div>
       <div style={{ fontSize:20, fontWeight:500, color:'#111', marginBottom:'.2rem' }}>Configurações</div>
       <div style={{ fontSize:12, color:'#888', marginBottom:'1.5rem' }}>Gerencie os participantes e consultores do projeto DF Turismo</div>
+
+      {isCoord && <SolicitacoesPendentes />}
+      {isCoord && <GerarConvites />}
 
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1.25rem', alignItems:'start' }}>
         <PeopleSection
@@ -1421,6 +1782,21 @@ export default function App() {
   const [processes,    setProcesses   ] = useState(initProcesses)
   const [colaboradores,setColaboradores]= useState(initColaboradores)
   const [consultores,  setConsultores ] = useState(initConsultores)
+  const [showCadastro, setShowCadastro] = useState(false)
+
+  // Check URL for invite token on mount
+  const inviteToken = (() => {
+    try { return new URLSearchParams(window.location.search).get('invite') } catch { return null }
+  })()
+
+  // Auto-open cadastro if invite token in URL
+  useEffect(() => {
+    if (inviteToken && !user) {
+      const invites = getInvites()
+      const inv = invites.find(i => i.token === inviteToken && i.status === 'ativo')
+      if (inv) setShowCadastro(true)
+    }
+  }, [])
 
   // Set default tab per role after login
   useEffect(() => {
@@ -1429,7 +1805,7 @@ export default function App() {
     else setTab('dashboard')
   }, [user?.id])
 
-  function handleLogin(u) { setUser(u) }
+  function handleLogin(u) { setUser(u); setShowCadastro(false) }
   function handleLogout() { localStorage.removeItem('pcUser'); setUser(null) }
 
   // Meetings
@@ -1456,7 +1832,10 @@ export default function App() {
   const handleConsultorUpdate = (id,data) => setConsultores(cs => cs.map(c => c.id===id ? {...c,...data} : c))
   const handleConsultorDelete = id  => setConsultores(cs => cs.filter(c => c.id!==id))
 
-  if (!user) return <LoginScreen onLogin={handleLogin} />
+  if (!user) {
+    if (showCadastro) return <CadastroScreen onBack={() => setShowCadastro(false)} inviteToken={inviteToken} />
+    return <LoginScreen onLogin={handleLogin} onCadastro={() => setShowCadastro(true)} />
+  }
 
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'#f0f2f0' }}>
@@ -1483,6 +1862,7 @@ export default function App() {
             colaboradores={colaboradores} consultores={consultores}
             onColabAdd={handleColabAdd} onColabUpdate={handleColabUpdate} onColabDelete={handleColabDelete}
             onConsultorAdd={handleConsultorAdd} onConsultorUpdate={handleConsultorUpdate} onConsultorDelete={handleConsultorDelete}
+            user={user}
           />
         )}
       </main>
