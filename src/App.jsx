@@ -482,7 +482,7 @@ function AgendaMes({ meetings, viewDate, onToggle, onDrillDay }) {
               <div style={{ width:22, height:22, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight: isToday ? 600 : 400, marginBottom:3, background: isToday ? BRAND : 'transparent', color: isToday ? '#fff' : '#333' }}>{cell.getDate()}</div>
               {evs.slice(0,2).map(m => (
                 <div key={m.id} onClick={e => { e.stopPropagation(); onToggle(m.id) }}
-                  style={{ fontSize:9, padding:'1px 5px', borderRadius:3, marginBottom:2, background: m.canceled ? '#eee' : EV_COLORS[m.ci%5].bg, color: m.canceled ? '#aaa' : EV_COLORS[m.ci%5].txt, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', textDecoration: m.canceled ? 'line-through' : 'none' }}>
+                  style={{ fontSize:9, padding:'1px 5px', borderRadius:3, marginBottom:2, background: m.canceled ? '#eee' : EV_COLORS[(m.ci??0)%5].bg, color: m.canceled ? '#aaa' : EV_COLORS[(m.ci??0)%5].txt, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', textDecoration: m.canceled ? 'line-through' : 'none' }}>
                   {m.title}
                 </div>
               ))}
@@ -613,7 +613,7 @@ function Dashboard({ meetings, processes }) {
         {upcoming.length===0
           ? <div style={{ padding:'1.5rem', textAlign:'center', fontSize:12, color:'#bbb' }}>Nenhuma reunião futura agendada</div>
           : upcoming.map(m => {
-            const c  = EV_COLORS[m.ci%5]
+            const c  = EV_COLORS[(m.ci??0)%5]
             const dt = fromYMD(m.date)
             const isToday = sameDay(dt, today)
             return (
@@ -649,7 +649,7 @@ function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel
   const [date,    setDate   ] = useState(todayYMD)
   const [start,   setStart  ] = useState('09:00')
   const [end,     setEnd    ] = useState('10:00')
-  const [who,     setWho    ] = useState(defaultWho)
+  const [who,     setWho    ] = useState(Array.isArray(defaultWho) ? defaultWho.join(', ') : (defaultWho||''))
   const [loading, setLoading] = useState(false)
   const [apiErr,  setApiErr ] = useState(null)
   const [success, setSuccess] = useState(null) // { meetLink, eventLink }
@@ -657,7 +657,7 @@ function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel
   const [sh,sm] = start.split(':').map(Number)
   const [eh,em] = end.split(':').map(Number)
   const validTime = eh*60+em > sh*60+sm
-  const valid     = who.trim() && date && validTime
+  const valid     = (who||'').trim() && date && validTime
   const selDt     = date ? fromYMD(date) : null
   const dayLabel  = selDt ? `${DAY_PT[selDt.getDay()]}, ${selDt.getDate()} de ${MONTH_PT[selDt.getMonth()]}` : ''
 
