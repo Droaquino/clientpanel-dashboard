@@ -932,7 +932,7 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting, cola
       </div>
       {scheduling && (
         <ScheduleForm processName={p.nome} defaultWho={p.comQuem} colaboradores={colaboradores}
-          onSave={data => { onAddMeeting({ title:p.nome, ...data, ci:(p.id-1)%5 }); setScheduling(false) }}
+          onSave={data => { onAddMeeting({ title:'Reunião de Coleta | DF Turismo', ...data, ci:(p.id-1)%5 }); setScheduling(false) }}
           onCancel={() => setScheduling(false)} />
       )}
     </div>
