@@ -199,7 +199,7 @@ function PersonCard({ person, type, onEdit, onDelete }) {
 }
 
 function PersonForm({ data, onChange, onSave, onCancel, type, isNew }) {
-  const ok = data.nome.trim()
+  const ok = (data.nome||'').trim()
   const fields = type==='consultor'
     ? [
         { key:'nome',          label:'Nome completo',     placeholder:'Ex: Ana Lima',           span:2 },
@@ -818,7 +818,7 @@ function ProcEditForm({ data, onChange, onSave, onCancel, isNew, consultores, co
   const areaOpts     = [...new Set(colaboradores.map(c => c.cargo).filter(Boolean))]
   const consultorOpts = consultores.map(c => c.nome)
   const colaborOpts   = colaboradores.map(c => c.nome)
-  const ok = data.nome.trim() && data.area.length && data.comQuem.length && data.consultor.length
+  const ok = (data.nome||'').trim() && data.area?.length && data.comQuem?.length && data.consultor?.length
 
   return (
     <div style={{ background: isNew ? '#FAFCFA' : '#f8fbf9', border:`1.5px solid ${BRAND_BRD}`, borderRadius:12, padding:'1.1rem 1.2rem', marginBottom:'.6rem' }}>
