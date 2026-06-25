@@ -10,16 +10,16 @@ export default async function handler(req, res) {
 
   const { title, processName, date, sh, sm, eh, em, who } = req.body
 
-  if (!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_REFRESH_TOKEN) {
     return res.status(500).json({ error: 'Credenciais do Google não configuradas nas variáveis de ambiente.' })
   }
 
   try {
-    const auth = new google.auth.JWT({
-      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      scopes: ['https://www.googleapis.com/auth/calendar'],
-    })
+    const auth = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+    )
+    auth.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN })
 
     const calendar = google.calendar({ version: 'v3', auth })
 
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     const tz  = 'America/Sao_Paulo'
 
     const event = await calendar.events.insert({
-      calendarId: process.env.GOOGLE_CALENDAR_ID || 'primary',
+      calendarId: 'primary',
       conferenceDataVersion: 1,
       requestBody: {
         summary: title || processName,
