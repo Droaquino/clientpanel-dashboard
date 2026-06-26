@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { BarChart2, Calendar, ClipboardList, FolderOpen, Settings, LogOut, Phone, Mail, Pencil, Trash2, Plus, X, Check, MessageSquare, CheckCircle, XCircle, AlertTriangle, User, Video, ChevronLeft, ChevronRight, Lock, Loader2, Link, ArrowLeft, LayoutGrid } from 'lucide-react'
+import { BarChart2, Calendar, ClipboardList, FolderOpen, Settings, LogOut, Phone, Mail, Pencil, Trash2, Plus, X, Check, MessageSquare, CheckCircle, XCircle, AlertTriangle, User, Video, ChevronLeft, ChevronRight, Lock, Loader2, Link, ArrowLeft, LayoutGrid, Moon, Sun } from 'lucide-react'
 import './index.css'
+import { useTheme, themes } from './useTheme.jsx'
 import {
   dbFindUsuario, dbGetSolicitacoes, dbAddSolicitacao, dbUpdateSolicitacao, dbAddUsuario,
   dbGetConvites, dbAddConvite, dbGetConvite, dbUsarConvite,
@@ -468,12 +469,16 @@ const hoverCardSt = (isHovered) => ({ transition:'all 0.2s ease', filter: isHove
 
 // ─── Sidebar ─────────────────────────────────────────────────
 function Sidebar({ tab, setTab, user, onLogout, onTabChange }) {
+  const { theme, setTheme } = useTheme()
   const [collapsed, setCollapsed] = useState(false)
   const role = user?.role || 'cliente'
 
   const handleTabClick = (newTab) => {
     if (onTabChange) onTabChange(newTab)
     else setTab(newTab)
+  }
+  const toggleTheme = () => {
+    setTheme(theme === 'light' ? 'dark' : 'light')
   }
   const allItems = [
     { id:'dashboard',    icon: <Icon ic={BarChart2} />, label:'Dashboard',     roles:['coordenador','consultor','socio'] },
@@ -504,7 +509,7 @@ function Sidebar({ tab, setTab, user, onLogout, onTabChange }) {
       {/* Cabeçalho */}
       <div style={{ padding:'0 .75rem 1rem', borderBottom:'1px solid rgba(255,255,255,.1)', marginBottom:'.5rem', paddingTop:'1rem', paddingRight: collapsed ? '.75rem' : '2.5rem' }}>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <div style={{ width:32, height:32, flexShrink:0, background:'rgba(255,255,255,.15)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, color:'#fff' }}><Icon ic={LayoutGrid} size={20} /></div>
+          <div style={{ width:32, height:32, flexShrink:0, background:'rgba(255,255,255,.15)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, color:'#fff' }}><Icon ic={LayoutGrid} size={18} /></div>
           <div style={{ opacity: collapsed ? 0 : 1, transition:'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
             <div style={{ fontSize:13, fontWeight:500, color:'#fff', whiteSpace:'nowrap' }}>Painel de Controle</div>
             <div style={{ fontSize:10, color:'rgba(255,255,255,.5)' }}>DF Turismo</div>
@@ -530,15 +535,17 @@ function Sidebar({ tab, setTab, user, onLogout, onTabChange }) {
         </div>
       ))}
 
-      {/* Perfil + Logout — logo abaixo dos itens, sem marginTop:auto */}
+      {/* Perfil + Logout + Theme Toggle — logo abaixo dos itens, sem marginTop:auto */}
       <div style={{ padding: collapsed ? '.75rem 0' : '.75rem 1rem', borderTop:'1px solid rgba(255,255,255,.1)', marginTop:12 }}>
         {collapsed ? (
           <>
+            <button onClick={toggleTheme} title={theme==='light' ? 'Dark mode' : 'Light mode'} style={{ width:'100%', fontSize:13, padding:'4px 0', border:'0.5px solid rgba(255,255,255,.25)', borderRadius:6, cursor:'pointer', background:'rgba(255,255,255,.08)', color:'rgba(255,255,255,.7)', marginBottom:6 }}><Icon ic={theme==='light' ? Moon : Sun} size={13} /></button>
             <div title={user?.nome} style={{ width:28, height:28, borderRadius:'50%', background:ACCENT, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'#0D2519', fontWeight:600, margin:'0 auto 6px' }}>{initials}</div>
             <button onClick={onLogout} title="Sair" style={{ width:'100%', fontSize:13, padding:'4px 0', border:'0.5px solid rgba(255,255,255,.25)', borderRadius:6, cursor:'pointer', background:'rgba(255,255,255,.08)', color:'rgba(255,255,255,.7)' }}><Icon ic={LogOut} size={13} /></button>
           </>
         ) : (
           <>
+            <button onClick={toggleTheme} title={theme==='light' ? 'Dark mode' : 'Light mode'} style={{ width:'100%', fontSize:11, padding:'5px', border:'0.5px solid rgba(255,255,255,.25)', borderRadius:6, cursor:'pointer', background:'rgba(255,255,255,.08)', color:'rgba(255,255,255,.7)', marginBottom:6, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}><Icon ic={theme==='light' ? Moon : Sun} size={12} /> {theme==='light' ? 'Dark' : 'Light'}</button>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
               <div style={{ width:28, height:28, borderRadius:'50%', background:ACCENT, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'#0D2519', fontWeight:600, flexShrink:0 }}>{initials}</div>
               <div style={{ minWidth:0 }}>
@@ -563,7 +570,7 @@ function PersonCard({ person, type, onEdit, onDelete }) {
   const initials = person.nome.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
   const avatarBg = type==='consultor' ? BRAND : '#6B7280'
   return (
-    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, padding:'1.25rem', display:'flex', gap:14, alignItems:'flex-start', boxShadow:'0 1px 3px rgba(0,0,0,0.05)' }}>
+    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, padding:'1.25rem', display:'flex', gap:14, alignItems:'flex-start', boxShadow:'0 1px 3px rgba(0,0,0,0.05)', animation:'slideInUp 0.4s ease-out' }}>
       <div style={{ width:40, height:40, borderRadius:'50%', background:avatarBg, color:'#fff', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{initials}</div>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontSize:13, fontWeight:500, color:'#111' }}>{person.nome}</div>
@@ -593,7 +600,7 @@ function PersonCard({ person, type, onEdit, onDelete }) {
 
 function AreaCard({ area, onEdit, onDelete }) {
   return (
-    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, padding:'1.25rem', display:'flex', gap:14, alignItems:'flex-start', boxShadow:'0 1px 3px rgba(0,0,0,0.05)' }}>
+    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, padding:'1.25rem', display:'flex', gap:14, alignItems:'flex-start', boxShadow:'0 1px 3px rgba(0,0,0,0.05)', animation:'slideInUp 0.4s ease-out' }}>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontSize:13, fontWeight:500, color:'#111' }}>{area.nome}</div>
         <div style={{ fontSize:11, color:'#888', marginTop:2 }}>
@@ -1554,11 +1561,11 @@ function Dashboard({ meetings, processes }) {
         {[
           ['Sprint 04','Mapeamento Core',BRAND,'📌'],
           [`${avgPct}%`,`${done}/${total} processos concluídos`, avgPct>=70?BRAND_MID:ACCENT,'🗂'],
-          [`${meetings.filter(m=>!m.canceled).length}`,'Reuniões confirmadas','#2D8A6F',<><Icon ic={CheckCircle} size={16} /></>],
-          [canceled.length||'0', canceled.length?`${canceled.length} cancelada(s)`:'Nenhuma cancelada', canceled.length?'#A32D2D':'#888',<><Icon ic={AlertTriangle} size={14} /></>],
+          [`${meetings.filter(m=>!m.canceled).length}`,'Reuniões confirmadas','#2D8A6F',<><Icon ic={CheckCircle} size={20} /></>],
+          [canceled.length||'0', canceled.length?`${canceled.length} cancelada(s)`:'Nenhuma cancelada', canceled.length?'#A32D2D':'#888',<><Icon ic={AlertTriangle} size={20} /></>],
         ].map(([val,lbl,clr,ico]) => (
-          <div key={lbl} style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, padding:'.9rem 1rem', display:'flex', alignItems:'center', gap:12, boxShadow:'0 1px 3px rgba(0,0,0,0.05)' }}>
-            <span style={{ fontSize:22 }}>{ico}</span>
+          <div key={lbl} style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, padding:'.9rem 1rem', display:'flex', alignItems:'center', gap:12, boxShadow:'0 1px 3px rgba(0,0,0,0.05)', animation:'slideInUp 0.4s ease-out' }}>
+            <span style={{ fontSize:24 }}>{ico}</span>
             <div><div style={{ fontSize:20, fontWeight:600, color:clr }}>{val}</div><div style={{ fontSize:10, color:'#888', marginTop:1 }}>{lbl}</div></div>
           </div>
         ))}
@@ -2052,7 +2059,7 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting, cola
   const fmtShort = p.formato==='Fluxograma' ? 'Fluxograma' : 'POP'
   const comentarios = p.comentarios || []
   return (
-    <div style={{ background:'#fff', border:`0.5px solid ${p.confirmed ? BRAND_BRD : '#e2e8e4'}`, borderRadius:14, padding:'1rem 1.1rem', marginBottom:'.6rem', boxShadow: p.confirmed ? `0 0 0 1px ${BRAND_BRD}` : 'none' }}>
+    <div style={{ background:'#fff', border:`0.5px solid ${p.confirmed ? BRAND_BRD : '#e2e8e4'}`, borderRadius:14, padding:'1rem 1.1rem', marginBottom:'.6rem', boxShadow: p.confirmed ? `0 0 0 1px ${BRAND_BRD}` : 'none', animation:'slideInUp 0.4s ease-out' }}>
       <div style={{ display:'grid', gridTemplateColumns:'28px 1fr auto', gap:10, alignItems:'start', marginBottom:'.85rem' }}>
         <div style={{ width:26, height:26, borderRadius:'50%', background: p.confirmed ? BRAND : '#f0f0f0', color: p.confirmed ? '#fff' : '#aaa', fontSize:10, fontWeight:500, display:'flex', alignItems:'center', justifyContent:'center' }}>{p.num}</div>
         <div style={{ minWidth:0 }}>
@@ -2268,6 +2275,8 @@ function Levantamento({ consultores, colaboradores, areas, onAdd, onGoProcessos 
 
 // ─── App root ─────────────────────────────────────────────────
 export default function App() {
+  const { theme } = useTheme()
+  const colors = themes[theme]
   const [user,         setUser        ] = useState(() => {
     try { const s = localStorage.getItem('pcUser'); return s ? JSON.parse(s) : null } catch { return null }
   })
@@ -2456,9 +2465,9 @@ export default function App() {
   }
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'#f0f2f0' }}>
+    <div style={{ display:'flex', minHeight:'100vh', background:colors.background }}>
       <Sidebar tab={tab} setTab={setTab} user={user} onLogout={handleLogout} onTabChange={handleTabChange} />
-      <main style={{ flex:1, padding:'1.5rem', overflowY:'auto', minWidth:0, opacity: fadeOut ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}>
+      <main style={{ flex:1, padding:'1.5rem', overflowY:'auto', minWidth:0, opacity: fadeOut ? 0 : 1, transition: 'opacity 0.3s ease-in-out', background:colors.background, color:colors.text }}>
         {tab==='dashboard' && user?.role === 'socio' && (
           <DashboardSocio processes={processes} areas={areas} colaboradores={colaboradores} consultores={consultores} />
         )}
