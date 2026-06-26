@@ -1325,10 +1325,10 @@ function DashboardSocio({ processes, areas, colaboradores, consultores }) {
   const STAGES = [
     { key: 'coleta', label: 'Coletado', color: '#6B7280' },
     { key: 'modelagem', label: 'Modelado', color: '#F59E0B' },
-    { key: 'valCOPS', label: 'Val. COPS', color: '#3B82F6' },
-    { key: 'corrCOPS', label: 'Corr. COPS', color: '#8B5CF6' },
-    { key: 'valCliente', label: 'Val. Cliente', color: '#10B981' },
-    { key: 'analise', label: 'Análise', color: '#EC4899' },
+    { key: 'valCOPS', label: 'Validação Interna', color: '#3B82F6' },
+    { key: 'corrCOPS', label: 'Correção', color: '#8B5CF6' },
+    { key: 'valCliente', label: 'Validação Final', color: '#10B981' },
+    { key: 'analise', label: 'Análise Crítica', color: '#EC4899' },
   ]
 
   // Filtros
