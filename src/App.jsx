@@ -187,20 +187,20 @@ function CadastroScreen({ onBack, inviteToken }) {
         )}
 
         <div style={{ marginBottom:10 }}>
-          <label style={labelSt}>Nome completo <span style={{ color:'#E24B4A' }}>*</span></label>
-          <input style={inputSt} value={nome} onChange={e => setNome(e.target.value)} placeholder="Seu nome completo" />
+          <label style={labelSt(theme)}>Nome completo <span style={{ color:'#E24B4A' }}>*</span></label>
+          <input style={inputSt(theme)} value={nome} onChange={e => setNome(e.target.value)} placeholder="Seu nome completo" />
         </div>
         <div style={{ marginBottom:10 }}>
-          <label style={labelSt}>E-mail <span style={{ color:'#E24B4A' }}>*</span></label>
-          <input style={inputSt} value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemplo.com" />
+          <label style={labelSt(theme)}>E-mail <span style={{ color:'#E24B4A' }}>*</span></label>
+          <input style={inputSt(theme)} value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemplo.com" />
         </div>
         <div style={{ marginBottom:14 }}>
-          <label style={labelSt}>Telefone (com DDD) <span style={{ color:'#E24B4A' }}>*</span></label>
-          <input style={inputSt} value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(61) 9 9999-9999" />
+          <label style={labelSt(theme)}>Telefone (com DDD) <span style={{ color:'#E24B4A' }}>*</span></label>
+          <input style={inputSt(theme)} value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(61) 9 9999-9999" />
         </div>
 
         <div style={{ marginBottom:12 }}>
-          <label style={labelSt}>Grupo <span style={{ color:'#E24B4A' }}>*</span></label>
+          <label style={labelSt(theme)}>Grupo <span style={{ color:'#E24B4A' }}>*</span></label>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
             {[['gestao','Grupo Gestão'],['cliente','Cliente']].map(([g,l]) => (
               <button key={g} onClick={() => !lockedRole && handleGrupo(g)} style={{
@@ -216,8 +216,8 @@ function CadastroScreen({ onBack, inviteToken }) {
 
         {grupo === 'gestao' && (
           <div style={{ marginBottom:10 }}>
-            <label style={labelSt}>Cargo</label>
-            <select style={{ ...inputSt, cursor: lockedRole ? 'default' : 'pointer' }} value={cargo}
+            <label style={labelSt(theme)}>Cargo</label>
+            <select style={{ ...inputSt(theme), cursor: lockedRole ? 'default' : 'pointer' }} value={cargo}
               onChange={e => !lockedRole && setCargo(e.target.value)} disabled={!!lockedRole}>
               <option value="Coordenador">Coordenador</option>
               <option value="Consultor">Consultor</option>
@@ -227,7 +227,7 @@ function CadastroScreen({ onBack, inviteToken }) {
 
         {grupo === 'cliente' && (
           <div style={{ marginBottom:10 }}>
-            <label style={labelSt}>Tipo</label>
+            <label style={labelSt(theme)}>Tipo</label>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
               {[['socio','Sócio'],['colaborador','Colaborador']].map(([r,l]) => (
                 <button key={r} onClick={() => !lockedRole && setRole(r)} style={{
@@ -245,12 +245,12 @@ function CadastroScreen({ onBack, inviteToken }) {
         {grupo === 'cliente' && role === 'colaborador' && (
           <>
             <div style={{ marginBottom:10 }}>
-              <label style={labelSt}>Área <span style={{ color:'#E24B4A' }}>*</span></label>
-              <input style={inputSt} value={area} onChange={e => setArea(e.target.value)} placeholder="Ex: Financeiro, RH…" />
+              <label style={labelSt(theme)}>Área <span style={{ color:'#E24B4A' }}>*</span></label>
+              <input style={inputSt(theme)} value={area} onChange={e => setArea(e.target.value)} placeholder="Ex: Financeiro, RH…" />
             </div>
             <div style={{ marginBottom:10 }}>
-              <label style={labelSt}>Cargo/Função <span style={{ color:'#E24B4A' }}>*</span></label>
-              <input style={inputSt} value={cargoFunc} onChange={e => setCargoFunc(e.target.value)} placeholder="Ex: Analista, Supervisor…" />
+              <label style={labelSt(theme)}>Cargo/Função <span style={{ color:'#E24B4A' }}>*</span></label>
+              <input style={inputSt(theme)} value={cargoFunc} onChange={e => setCargoFunc(e.target.value)} placeholder="Ex: Analista, Supervisor…" />
             </div>
           </>
         )}
@@ -342,8 +342,8 @@ function LoginScreen({ onLogin, onCadastro }) {
         {section === 'gestao' ? (
           <>
             <div style={{ marginBottom:10 }}>
-              <label style={labelSt}>Usuário</label>
-              <select style={{ ...inputSt, cursor:'pointer' }} value={userId} onChange={e => setUserId(e.target.value)}>
+              <label style={labelSt(theme)}>Usuário</label>
+              <select style={{ ...inputSt(theme), cursor:'pointer' }} value={userId} onChange={e => setUserId(e.target.value)}>
                 <option value="">Selecione…</option>
                 {gestaoUsers.map(u => <option key={u.id} value={u.id}>{u.nome} — {u.cargo}</option>)}
               </select>
@@ -352,26 +352,26 @@ function LoginScreen({ onLogin, onCadastro }) {
         ) : (
           <>
             <div style={{ marginBottom:10 }}>
-              <label style={labelSt}>E-mail</label>
-              <input style={inputSt} value={clientEmail} onChange={e => setClientEmail(e.target.value)} placeholder="email@exemplo.com" />
+              <label style={labelSt(theme)}>E-mail</label>
+              <input style={inputSt(theme)} value={clientEmail} onChange={e => setClientEmail(e.target.value)} placeholder="email@exemplo.com" />
             </div>
             <div style={{ marginBottom:10 }}>
-              <label style={labelSt}>Tipo de acesso (demo)</label>
-              <select style={{ ...inputSt, cursor:'pointer' }} value={clientType} onChange={e => setClientType(e.target.value)}>
+              <label style={labelSt(theme)}>Tipo de acesso (demo)</label>
+              <select style={{ ...inputSt(theme), cursor:'pointer' }} value={clientType} onChange={e => setClientType(e.target.value)}>
                 <option value="socio">Sócio</option>
                 <option value="cliente">Cliente</option>
               </select>
             </div>
             <div style={{ marginBottom:10 }}>
-              <label style={labelSt}>Seu nome</label>
-              <input style={inputSt} value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Nome (opcional)" />
+              <label style={labelSt(theme)}>Seu nome</label>
+              <input style={inputSt(theme)} value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Nome (opcional)" />
             </div>
           </>
         )}
 
         <div style={{ marginBottom:'1rem' }}>
-          <label style={labelSt}>Senha</label>
-          <input type="password" style={inputSt} value={senha} onChange={e => setSenha(e.target.value)}
+          <label style={labelSt(theme)}>Senha</label>
+          <input type="password" style={inputSt(theme)} value={senha} onChange={e => setSenha(e.target.value)}
             onKeyDown={e => e.key==='Enter' && doLogin()} placeholder="••••••••" />
         </div>
 
@@ -1423,11 +1423,11 @@ function DashboardSocio({ processes, areas, colaboradores, consultores }) {
       <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: '0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius: 14, padding: '1.5rem', marginBottom: '1.5rem', boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
           <div>
-            <label style={labelSt}>Filtrar por área</label>
+            <label style={labelSt(theme)}>Filtrar por área</label>
             <ChipSelect values={selectedAreas} onChange={setSelectedAreas} options={areaOpts} allowFreeText={false} placeholder="Todas as áreas" />
           </div>
           <div>
-            <label style={labelSt}>Filtrar por estágio</label>
+            <label style={labelSt(theme)}>Filtrar por estágio</label>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {STAGES.map(s => (
                 <button
@@ -1913,6 +1913,7 @@ function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel
 // ─── ChipSelect ───────────────────────────────────────────────
 // values: string[]  options: string[]  allowFreeText: bool
 function ChipSelect({ values, onChange, options, allowFreeText, placeholder }) {
+  const { theme } = useTheme()
   const [freeText, setFreeText] = useState('')
   const available = options.filter(o => !values.includes(o))
 
@@ -1939,7 +1940,7 @@ function ChipSelect({ values, onChange, options, allowFreeText, placeholder }) {
       )}
       {/* select dropdown */}
       {available.length > 0 && (
-        <select style={{ ...inputSt, cursor:'pointer', marginBottom: allowFreeText ? 6 : 0 }}
+        <select style={{ ...inputSt(theme), cursor:'pointer', marginBottom: allowFreeText ? 6 : 0 }}
           value="" onChange={e => { add(e.target.value); e.target.value='' }}>
           <option value="">{placeholder || 'Selecionar…'}</option>
           {available.map(o => <option key={o} value={o}>{o}</option>)}
@@ -1951,7 +1952,7 @@ function ChipSelect({ values, onChange, options, allowFreeText, placeholder }) {
           <input value={freeText} onChange={e => setFreeText(e.target.value)}
             onKeyDown={e => e.key==='Enter' && commitFree()}
             placeholder="Colaborador externo… (Enter para adicionar)"
-            style={{ ...inputSt, flex:1, fontSize:12 }} />
+            style={{ ...inputSt(theme), flex:1, fontSize:12 }} />
           <button onClick={commitFree} style={{ fontSize:12, padding:'5px 10px', border:`0.5px solid ${BRAND_BRD}`, borderRadius:7, cursor:'pointer', background:BRAND_LIGHT, color:BRAND, whiteSpace:'nowrap' }}><Icon ic={Plus} size={16} /></button>
         </div>
       )}
