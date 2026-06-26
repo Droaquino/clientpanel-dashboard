@@ -1,5 +1,19 @@
 import { useState, useEffect } from 'react'
+import { BarChart2, Calendar, ClipboardList, FolderOpen, Settings, LogOut, Phone, Mail, Pencil, Trash2, Plus, X, Check, MessageSquare, CheckCircle, XCircle, AlertTriangle, User, Video, ChevronLeft, ChevronRight, Lock, Loader2, Link, ArrowLeft, LayoutGrid } from 'lucide-react'
 import './index.css'
+import {
+  dbFindUsuario, dbGetSolicitacoes, dbAddSolicitacao, dbUpdateSolicitacao, dbAddUsuario,
+  dbGetConvites, dbAddConvite, dbGetConvite, dbUsarConvite,
+  dbGetEventos, dbAddEvento, dbSaveEvento, dbDeleteEvento,
+  dbGetProcessos, dbAddProcesso, dbSaveProcesso, dbDeleteProcesso,
+  dbGetColaboradores, dbAddColaborador, dbSaveColaborador, dbDeleteColaborador,
+  dbGetConsultores, dbAddConsultor, dbSaveConsultor, dbDeleteConsultor,
+  dbGetAreas, dbAddArea, dbSaveArea, dbDeleteArea,
+} from './supabase'
+
+function Icon({ ic: Ic, size=14, style={} }) {
+  return <Ic size={size} strokeWidth={1.8} style={{ display:'inline-block', verticalAlign:'middle', flexShrink:0, ...style }} />
+}
 
 // ─── Theme ────────────────────────────────────────────────────
 const BRAND       = '#163828'
@@ -56,91 +70,76 @@ const USERS = [
   { id:5, nome:'Visitante',    role:'cliente',     cargo:'Cliente',      senha:'cliente2024', grupo:'cliente' },
 ]
 
-// ─── localStorage helpers ─────────────────────────────────────
-function getPending()  { try { return JSON.parse(localStorage.getItem('pcPending')  || '[]') } catch { return [] } }
-function getApproved() { try { return JSON.parse(localStorage.getItem('pcApproved') || '[]') } catch { return [] } }
-function getInvites()  { try { return JSON.parse(localStorage.getItem('pcInvites')  || '[]') } catch { return [] } }
-function setPending(v)  { localStorage.setItem('pcPending',  JSON.stringify(v)) }
-function setApproved(v) { localStorage.setItem('pcApproved', JSON.stringify(v)) }
-function setInvites(v)  { localStorage.setItem('pcInvites',  JSON.stringify(v)) }
+// ─── localStorage helpers (apenas sessão do usuário logado) ──
+// Dados de cadastro/solicitações/convites agora no Supabase
 
 function senhaFromTel(tel) {
   return (tel.replace(/\D/g,'').slice(0,4))
 }
 
-function findUser(id, senha) {
-  // Check hardcoded users first (by id number from gestao select)
-  const hardU = USERS.find(x => x.id === Number(id))
-  if (hardU && hardU.senha === senha) return hardU
-  // Check approved users (by email or nome used as id)
-  const approved = getApproved()
-  const appU = approved.find(x => x.email === id || x.nome === id)
-  if (appU && senhaFromTel(appU.telefone) === senha) {
-    return { id: appU.id, nome: appU.nome, role: appU.role, cargo: appU.role, grupo: appU.grupo, email: appU.email }
-  }
-  return null
-}
+// findUser → dbFindUsuario (supabase.js)
 
 // ─── CadastroScreen ───────────────────────────────────────────
 function CadastroScreen({ onBack, inviteToken }) {
-  const invites    = getInvites()
-  const inviteData = inviteToken ? invites.find(i => i.token === inviteToken) : null
+  const [inviteData, setInviteData] = useState(null)
   const lockedRole = inviteData?.role || null
 
   const [nome,      setNome     ] = useState('')
   const [email,     setEmail    ] = useState('')
   const [telefone,  setTelefone ] = useState('')
   const [grupo,     setGrupo    ] = useState('cliente')
-  const [role,      setRole     ] = useState(lockedRole || 'socio')
+  const [role,      setRole     ] = useState('socio')
   const [cargo,     setCargo    ] = useState('Coordenador')
   const [area,      setArea     ] = useState('')
   const [cargoFunc, setCargoFunc] = useState('')
   const [success,   setSuccess  ] = useState(false)
   const [err,       setErr      ] = useState('')
+  const [loading,   setLoading  ] = useState(false)
 
-  // sync role lock from invite
+  // Carrega dados do convite via Supabase
   useEffect(() => {
-    if (lockedRole) {
-      setRole(lockedRole)
-      if (lockedRole === 'consultor' || lockedRole === 'coordenador') setGrupo('gestao')
-      else setGrupo('cliente')
-    }
-  }, [lockedRole])
+    if (!inviteToken) return
+    dbGetConvite(inviteToken).then(inv => {
+      if (inv) {
+        setInviteData(inv)
+        setRole(inv.role)
+        if (inv.role === 'consultor' || inv.role === 'coordenador') setGrupo('gestao')
+        else setGrupo('cliente')
+      }
+    })
+  }, [inviteToken])
 
   function handleGrupo(g) {
     setGrupo(g)
     if (!lockedRole) setRole(g === 'gestao' ? 'coordenador' : 'socio')
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     setErr('')
     if (!nome.trim() || !email.trim() || !telefone.trim()) { setErr('Preencha todos os campos obrigatórios.'); return }
     if (role === 'colaborador' && (!area.trim() || !cargoFunc.trim())) { setErr('Preencha Área e Cargo/Função.'); return }
-    const pending = getPending()
-    pending.push({
-      id: Date.now(),
-      nome: nome.trim(), email: email.trim(), telefone: telefone.trim(),
-      grupo,
-      role: grupo === 'gestao' ? (cargo === 'Coordenador' ? 'coordenador' : 'consultor') : role,
-      cargo: grupo === 'gestao' ? cargo : (role === 'socio' ? 'Sócio' : cargoFunc),
-      area: role === 'colaborador' ? area.trim() : '',
-      status: 'pendente',
-      inviteToken: inviteToken || null,
-      dataSolicitacao: new Date().toISOString(),
-    })
-    setPending(pending)
-    // mark invite as used
-    if (inviteToken) {
-      const upd = getInvites().map(i => i.token === inviteToken ? { ...i, status:'usado' } : i)
-      setInvites(upd)
+    setLoading(true)
+    try {
+      await dbAddSolicitacao({
+        nome: nome.trim(), email: email.trim(), telefone: telefone.trim(),
+        grupo,
+        role: grupo === 'gestao' ? (cargo === 'Coordenador' ? 'coordenador' : 'consultor') : role,
+        cargo: grupo === 'gestao' ? cargo : (role === 'socio' ? 'Sócio' : cargoFunc),
+        area: role === 'colaborador' ? area.trim() : '',
+        inviteToken: inviteToken || null,
+      })
+      if (inviteToken) await dbUsarConvite(inviteToken)
+      setSuccess(true)
+    } catch(e) {
+      setErr('Erro ao enviar solicitação. Tente novamente.')
     }
-    setSuccess(true)
+    setLoading(false)
   }
 
   if (success) return (
     <div style={{ minHeight:'100vh', background:`linear-gradient(135deg, ${BRAND} 0%, ${BRAND_MID} 100%)`, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}>
       <div style={{ background:'#fff', borderRadius:18, padding:'2rem', width:400, maxWidth:'95vw', textAlign:'center', boxShadow:'0 16px 60px rgba(0,0,0,.25)' }}>
-        <div style={{ fontSize:40, marginBottom:12 }}>✅</div>
+        <div style={{ fontSize:40, marginBottom:12 }}><Icon ic={CheckCircle} size={40} style={{color: BRAND}} /></div>
         <div style={{ fontSize:16, fontWeight:600, color:BRAND, marginBottom:8 }}>Solicitação enviada!</div>
         <div style={{ fontSize:13, color:'#555', marginBottom:'1.5rem' }}>Aguarde a aprovação do coordenador.</div>
         <button onClick={onBack} style={{ fontSize:13, padding:'8px 20px', borderRadius:8, border:`0.5px solid ${BRAND}`, background:BRAND, color:'#fff', cursor:'pointer' }}>Voltar ao login</button>
@@ -152,7 +151,7 @@ function CadastroScreen({ onBack, inviteToken }) {
     <div style={{ minHeight:'100vh', background:`linear-gradient(135deg, ${BRAND} 0%, ${BRAND_MID} 100%)`, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}>
       <div style={{ background:'#fff', borderRadius:18, padding:'2rem', width:440, maxWidth:'95vw', maxHeight:'92vh', overflowY:'auto', boxShadow:'0 16px 60px rgba(0,0,0,.25)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:'1.5rem' }}>
-          <button onClick={onBack} style={{ border:'none', background:'none', fontSize:18, cursor:'pointer', color:'#999', lineHeight:1, padding:0 }}>←</button>
+          <button onClick={onBack} style={{ border:'none', background:'none', fontSize:18, cursor:'pointer', color:'#999', lineHeight:1, padding:0 }}><Icon ic={ArrowLeft} size={18} /></button>
           <div>
             <div style={{ fontSize:16, fontWeight:600, color:BRAND }}>Solicitar Cadastro</div>
             <div style={{ fontSize:11, color:'#888' }}>Preencha os dados para solicitar acesso</div>
@@ -161,7 +160,7 @@ function CadastroScreen({ onBack, inviteToken }) {
 
         {inviteData && (
           <div style={{ background:BRAND_LIGHT, border:`0.5px solid ${BRAND_BRD}`, borderRadius:8, padding:'8px 10px', marginBottom:12, fontSize:11, color:BRAND }}>
-            🔗 Convite válido — perfil pré-definido: <strong>{lockedRole}</strong>
+            <Icon ic={Link} size={13} /> Convite válido — perfil pré-definido: <strong>{lockedRole}</strong>
           </div>
         )}
 
@@ -236,54 +235,62 @@ function CadastroScreen({ onBack, inviteToken }) {
 
         {err && <div style={{ fontSize:11, color:'#A32D2D', marginBottom:8 }}>{err}</div>}
 
-        <button onClick={handleSubmit} style={{
+        <button onClick={handleSubmit} disabled={loading} style={{
           width:'100%', padding:'9px', borderRadius:8, fontSize:13, fontWeight:500, marginTop:6,
-          background:BRAND, color:'#fff', border:'none', cursor:'pointer',
-        }}>Enviar Solicitação</button>
+          background: loading ? '#999' : BRAND, color:'#fff', border:'none', cursor: loading ? 'wait' : 'pointer',
+        }}>{loading ? 'Enviando...' : 'Enviar Solicitação'}</button>
       </div>
     </div>
   )
 }
 
 function LoginScreen({ onLogin, onCadastro }) {
-  const [section,  setSection ] = useState('gestao')
-  const [userId,   setUserId  ] = useState('')
+  const [section,     setSection    ] = useState('gestao')
+  const [userId,      setUserId     ] = useState('')
   const [clientEmail, setClientEmail] = useState('')
-  const [clientType, setClientType] = useState('socio')
-  const [clientName, setClientName] = useState('')
-  const [senha,    setSenha   ] = useState('')
-  const [err,      setErr     ] = useState('')
+  const [clientType,  setClientType ] = useState('socio')
+  const [clientName,  setClientName ] = useState('')
+  const [senha,       setSenha      ] = useState('')
+  const [err,         setErr        ] = useState('')
+  const [loading,     setLoading    ] = useState(false)
 
-  function doLogin() {
+  async function doLogin() {
     setErr('')
+    setLoading(true)
     if (section === 'gestao') {
-      // hardcoded users
       if (userId) {
+        // 1. Tenta usuário fixo (Pedro, Ana, Carlos)
         const u = USERS.find(x => x.id === Number(userId) && x.grupo === 'gestao')
-        if (!u) { setErr('Selecione um usuário.'); return }
-        if (u.senha !== senha) { setErr('Senha incorreta.'); return }
-        localStorage.setItem('pcUser', JSON.stringify(u))
-        onLogin(u); return
+        if (u) {
+          if (u.senha !== senha) { setErr('Senha incorreta.'); setLoading(false); return }
+          localStorage.setItem('pcUser', JSON.stringify(u))
+          onLogin(u); setLoading(false); return
+        }
+        // 2. Tenta usuário criado via Configurações (Supabase)
+        const dbU = await dbFindUsuario(String(userId), senha)
+        if (dbU && dbU.grupo === 'gestao') {
+          localStorage.setItem('pcUser', JSON.stringify(dbU))
+          onLogin(dbU); setLoading(false); return
+        }
       }
-      setErr('Selecione um usuário.'); return
+      setErr('Usuário ou senha incorretos.'); setLoading(false); return
     } else {
-      // Try approved users by email first
-      const approved = getApproved()
-      const appU = approved.find(x => x.email === clientEmail.trim() && x.grupo === 'cliente')
-      if (appU) {
-        if (senhaFromTel(appU.telefone) !== senha) { setErr('Senha incorreta.'); return }
-        const logged = { id: appU.id, nome: appU.nome, role: appU.role, cargo: appU.cargo, grupo: appU.grupo, email: appU.email }
-        localStorage.setItem('pcUser', JSON.stringify(logged))
-        onLogin(logged); return
+      // 1. Tenta no Supabase por e-mail
+      if (clientEmail.trim()) {
+        const dbU = await dbFindUsuario(clientEmail.trim(), senha)
+        if (dbU) {
+          localStorage.setItem('pcUser', JSON.stringify(dbU))
+          onLogin(dbU); setLoading(false); return
+        }
       }
-      // fallback to hardcoded
+      // 2. Fallback hardcoded (DF Turismo / Visitante)
       const targetRole = clientType
       const u = USERS.find(x => x.role === targetRole && x.grupo === 'cliente')
-      if (!u) { setErr('Tipo inválido.'); return }
-      if (u.senha !== senha) { setErr('Senha incorreta.'); return }
+      if (!u) { setErr('Tipo inválido.'); setLoading(false); return }
+      if (u.senha !== senha) { setErr('Senha incorreta.'); setLoading(false); return }
       const logged = { ...u, nome: clientName.trim() || u.nome }
       localStorage.setItem('pcUser', JSON.stringify(logged))
-      onLogin(logged)
+      onLogin(logged); setLoading(false)
     }
   }
 
@@ -294,7 +301,7 @@ function LoginScreen({ onLogin, onCadastro }) {
       <div style={{ background:'#fff', borderRadius:18, padding:'2rem', width:380, maxWidth:'95vw', boxShadow:'0 16px 60px rgba(0,0,0,.25)' }}>
         {/* Logo */}
         <div style={{ textAlign:'center', marginBottom:'1.5rem' }}>
-          <div style={{ width:52, height:52, borderRadius:14, background:BRAND, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, color:'#fff', margin:'0 auto 10px' }}>⊞</div>
+          <div style={{ width:52, height:52, borderRadius:14, background:BRAND, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, color:'#fff', margin:'0 auto 10px' }}><Icon ic={LayoutGrid} size={24} /></div>
           <div style={{ fontSize:17, fontWeight:600, color:BRAND }}>Painel de Controle</div>
           <div style={{ fontSize:12, color:'#888', marginTop:2 }}>DF Turismo</div>
         </div>
@@ -347,10 +354,10 @@ function LoginScreen({ onLogin, onCadastro }) {
 
         {err && <div style={{ fontSize:11, color:'#A32D2D', marginBottom:8 }}>{err}</div>}
 
-        <button onClick={doLogin} style={{
+        <button onClick={doLogin} disabled={loading} style={{
           width:'100%', padding:'9px', borderRadius:8, fontSize:13, fontWeight:500,
-          background:BRAND, color:'#fff', border:'none', cursor:'pointer',
-        }}>Entrar</button>
+          background: loading ? '#999' : BRAND, color:'#fff', border:'none', cursor: loading ? 'wait' : 'pointer',
+        }}>{loading ? 'Verificando...' : 'Entrar'}</button>
 
         <div style={{ textAlign:'center', marginTop:'1rem', paddingTop:'1rem', borderTop:'0.5px solid #eee' }}>
           <span style={{ fontSize:11, color:'#888' }}>Não tem acesso? </span>
@@ -437,47 +444,83 @@ const labelSt = { fontSize:11, color:'#666', marginBottom:3, display:'block' }
 
 // ─── Sidebar ─────────────────────────────────────────────────
 function Sidebar({ tab, setTab, user, onLogout }) {
+  const [collapsed, setCollapsed] = useState(false)
   const role = user?.role || 'cliente'
   const allItems = [
-    { id:'dashboard',    icon:'📊', label:'Dashboard',     roles:['coordenador','consultor'] },
-    { id:'agenda',       icon:'📅', label:'Agenda',         roles:['coordenador','consultor'] },
-    { id:'levantamento', icon:'📋', label:'Levantamento',   roles:['coordenador','consultor'] },
-    { id:'processos',    icon:'🗂',  label:'Processos',      roles:['coordenador','consultor','socio','cliente'] },
-    { id:'configuracoes',icon:'⚙️', label:'Configurações',  roles:['coordenador'] },
+    { id:'dashboard',    icon: <Icon ic={BarChart2} />, label:'Dashboard',     roles:['coordenador','consultor'] },
+    { id:'agenda',       icon: <Icon ic={Calendar} />, label:'Agenda',         roles:['coordenador','consultor'] },
+    { id:'levantamento', icon: <Icon ic={ClipboardList} />, label:'Levantamento',   roles:['coordenador','consultor'] },
+    { id:'processos',    icon: <Icon ic={FolderOpen} />,  label:'Processos',      roles:['coordenador','consultor','socio','cliente'] },
+    { id:'colaboradores',icon: <Icon ic={User} />, label:'Colaboradores',  roles:['socio'] },
+    { id:'configuracoes',icon: <Icon ic={Settings} />, label:'Configurações',  roles:['coordenador'] },
   ]
   const items = allItems.filter(i => i.roles.includes(role))
   const initials = (user?.nome||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
+  const w = collapsed ? 52 : 210
   return (
-    <nav style={{ width:210, flexShrink:0, background:BRAND, display:'flex', flexDirection:'column', padding:'1.25rem 0' }}>
-      <div style={{ padding:'0 1rem 1.25rem', borderBottom:'1px solid rgba(255,255,255,.1)', marginBottom:'.75rem' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <div style={{ width:32, height:32, background:'rgba(255,255,255,.15)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, color:'#fff' }}>⊞</div>
-          <div>
-            <div style={{ fontSize:13, fontWeight:500, color:'#fff' }}>Painel de Controle</div>
-            <div style={{ fontSize:10, color:'rgba(255,255,255,.5)' }}>DF Turismo</div>
-          </div>
+    <nav style={{ width:w, flexShrink:0, background:BRAND, display:'flex', flexDirection:'column', transition:'width .2s', overflow:'hidden', position:'relative' }}>
+      {/* Toggle separado — flutua sobre a borda direita */}
+      <button
+        onClick={() => setCollapsed(c => !c)}
+        title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+        style={{
+          position:'absolute', top:12, right: collapsed ? 8 : 8, zIndex:10,
+          width:22, height:22, borderRadius:'50%', border:'none', cursor:'pointer',
+          background:'rgba(255,255,255,.15)', color:'rgba(255,255,255,.8)',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontSize:11, lineHeight:1, flexShrink:0,
+        }}
+      ><Icon ic={collapsed ? ChevronRight : ChevronLeft} size={11} /></button>
+
+      {/* Cabeçalho */}
+      <div style={{ padding:'0 .75rem 1rem', borderBottom:'1px solid rgba(255,255,255,.1)', marginBottom:'.5rem', paddingTop:'1rem', paddingRight: collapsed ? '.75rem' : '2.5rem' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ width:32, height:32, flexShrink:0, background:'rgba(255,255,255,.15)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, color:'#fff' }}><Icon ic={LayoutGrid} size={16} /></div>
+          {!collapsed && (
+            <div>
+              <div style={{ fontSize:13, fontWeight:500, color:'#fff', whiteSpace:'nowrap' }}>Painel de Controle</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,.5)' }}>DF Turismo</div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Itens de menu */}
       {items.map(({ id, icon, label }) => (
-        <div key={id} onClick={() => setTab(id)} style={{
-          display:'flex', alignItems:'center', gap:10, padding:'10px 1rem', cursor:'pointer',
+        <div key={id} onClick={() => setTab(id)} title={collapsed ? label : ''} style={{
+          display:'flex', alignItems:'center', gap:10,
+          padding: collapsed ? '10px 0' : '10px 1rem',
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          cursor:'pointer',
           fontSize:13, color: tab===id ? '#fff' : 'rgba(255,255,255,.6)',
           borderLeft:`2.5px solid ${tab===id ? ACCENT : 'transparent'}`,
           background: tab===id ? 'rgba(255,255,255,.1)' : 'transparent',
           fontWeight: tab===id ? 500 : 400,
         }}>
-          <span>{icon}</span> {label}
+          <span style={{ fontSize: collapsed ? 17 : 14 }}>{icon}</span>
+          {!collapsed && label}
         </div>
       ))}
-      <div style={{ marginTop:'auto', padding:'1rem', borderTop:'1px solid rgba(255,255,255,.1)' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-          <div style={{ width:28, height:28, borderRadius:'50%', background:ACCENT, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'#0D2519', fontWeight:600, flexShrink:0 }}>{initials}</div>
-          <div style={{ minWidth:0 }}>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,.85)', fontWeight:500, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{user?.nome}</div>
-            <div style={{ fontSize:10, color:'rgba(255,255,255,.5)' }}>{user?.cargo}</div>
-          </div>
-        </div>
-        <button onClick={onLogout} style={{ width:'100%', fontSize:11, padding:'5px', border:'0.5px solid rgba(255,255,255,.25)', borderRadius:6, cursor:'pointer', background:'rgba(255,255,255,.08)', color:'rgba(255,255,255,.7)' }}>Sair</button>
+
+      {/* Perfil + Logout — logo abaixo dos itens, sem marginTop:auto */}
+      <div style={{ padding: collapsed ? '.75rem 0' : '.75rem 1rem', borderTop:'1px solid rgba(255,255,255,.1)', marginTop:12 }}>
+        {collapsed ? (
+          <>
+            <div title={user?.nome} style={{ width:28, height:28, borderRadius:'50%', background:ACCENT, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'#0D2519', fontWeight:600, margin:'0 auto 6px' }}>{initials}</div>
+            <button onClick={onLogout} title="Sair" style={{ width:'100%', fontSize:13, padding:'4px 0', border:'0.5px solid rgba(255,255,255,.25)', borderRadius:6, cursor:'pointer', background:'rgba(255,255,255,.08)', color:'rgba(255,255,255,.7)' }}><Icon ic={LogOut} size={13} /></button>
+          </>
+        ) : (
+          <>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+              <div style={{ width:28, height:28, borderRadius:'50%', background:ACCENT, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'#0D2519', fontWeight:600, flexShrink:0 }}>{initials}</div>
+              <div style={{ minWidth:0 }}>
+                <div style={{ fontSize:12, color:'rgba(255,255,255,.85)', fontWeight:500, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{user?.nome}</div>
+                <div style={{ fontSize:10, color:'rgba(255,255,255,.5)' }}>{user?.cargo}</div>
+              </div>
+            </div>
+            <button onClick={onLogout} style={{ width:'100%', fontSize:11, padding:'5px', border:'0.5px solid rgba(255,255,255,.25)', borderRadius:6, cursor:'pointer', background:'rgba(255,255,255,.08)', color:'rgba(255,255,255,.7)' }}>Sair</button>
+          </>
+        )}
       </div>
     </nav>
   )
@@ -486,6 +529,7 @@ function Sidebar({ tab, setTab, user, onLogout }) {
 // ─── Configurações ────────────────────────────────────────────
 const emptyColab      = { nome:'', cargo:'', telefone:'', email:'' }
 const emptyConsultor  = { nome:'', especialidade:'', telefone:'', email:'' }
+const emptyArea       = { nome:'', ativa:true }
 
 function PersonCard({ person, type, onEdit, onDelete }) {
   const initials = person.nome.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
@@ -501,25 +545,78 @@ function PersonCard({ person, type, onEdit, onDelete }) {
         <div style={{ display:'flex', gap:12, marginTop:6, flexWrap:'wrap' }}>
           {person.telefone && (
             <a href={`tel:${person.telefone}`} style={{ fontSize:11, color:'#555', textDecoration:'none', display:'flex', alignItems:'center', gap:4 }}>
-              📞 {person.telefone}
+              <Icon ic={Phone} size={11} /> {person.telefone}
             </a>
           )}
           {person.email && (
             <a href={`mailto:${person.email}`} style={{ fontSize:11, color:'#378ADD', textDecoration:'none', display:'flex', alignItems:'center', gap:4 }}>
-              ✉️ {person.email}
+              <Icon ic={Mail} size={11} /> {person.email}
             </a>
           )}
         </div>
       </div>
       <div style={{ display:'flex', gap:5, flexShrink:0 }}>
-        <button onClick={() => onEdit(person)} style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #d0d0d0', borderRadius:6, cursor:'pointer', background:'#fff', color:'#555' }}>✏️</button>
-        <button onClick={() => onDelete(person.id)} style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #f5c6c6', borderRadius:6, cursor:'pointer', background:'#fff', color:'#A32D2D' }}>🗑</button>
+        <button onClick={() => onEdit(person)} style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #d0d0d0', borderRadius:6, cursor:'pointer', background:'#fff', color:'#555' }}><Icon ic={Pencil} size={12} /></button>
+        <button onClick={() => onDelete(person.id)} style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #f5c6c6', borderRadius:6, cursor:'pointer', background:'#fff', color:'#A32D2D' }}><Icon ic={Trash2} size={12} /></button>
+      </div>
+    </div>
+  )
+}
+
+function AreaCard({ area, onEdit, onDelete }) {
+  return (
+    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:12, padding:'1rem', display:'flex', gap:12, alignItems:'flex-start' }}>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontSize:13, fontWeight:500, color:'#111' }}>{area.nome}</div>
+        <div style={{ fontSize:11, color:'#888', marginTop:2 }}>
+          Status: <span style={{ fontWeight:500, color: area.ativa ? BRAND : '#888' }}>{area.ativa ? 'Ativa' : 'Inativa'}</span>
+        </div>
+      </div>
+      <div style={{ display:'flex', gap:5, flexShrink:0 }}>
+        <button onClick={() => onEdit(area)} style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #d0d0d0', borderRadius:6, cursor:'pointer', background:'#fff', color:'#555' }}><Icon ic={Pencil} size={12} /></button>
+        <button onClick={() => onDelete(area.id)} style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #f5c6c6', borderRadius:6, cursor:'pointer', background:'#fff', color:'#A32D2D' }}><Icon ic={Trash2} size={12} /></button>
+      </div>
+    </div>
+  )
+}
+
+function AreaForm({ data, onChange, onSave, onCancel, isNew }) {
+  const ok = (data.nome||'').trim()
+  return (
+    <div style={{ background: isNew ? '#FAFCFA' : '#f8fbf9', border:`1.5px solid ${BRAND_BRD}`, borderRadius:12, padding:'1rem 1.2rem', marginBottom:'.75rem' }}>
+      <div style={{ fontSize:13, fontWeight:500, color:BRAND, marginBottom:'1rem' }}>{isNew ? <><Icon ic={Plus} size={12} /> Nova área</> : <><Icon ic={Pencil} size={12} /> Editando área</>}</div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginBottom:'1rem' }}>
+        <div style={{ gridColumn:'1/-1' }}>
+          <label style={labelSt}>Nome da área <span style={{ color:'#E24B4A' }}>*</span></label>
+          <input style={inputSt} value={data.nome||''} placeholder="Ex: Comercial, RH, Financeiro"
+            onChange={e => onChange({ ...data, nome:e.target.value })} />
+        </div>
+        <div style={{ gridColumn:'1/-1' }}>
+          <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', userSelect:'none' }}>
+            <input type="checkbox" checked={data.ativa!==false} onChange={e => onChange({ ...data, ativa:e.target.checked })}
+              style={{ accentColor:BRAND, width:14, height:14 }} />
+            <span style={{ fontSize:12, fontWeight:500, color:BRAND }}>Área ativa</span>
+          </label>
+        </div>
+      </div>
+      <div style={{ display:'flex', gap:'0.75rem', justifyContent:'flex-end' }}>
+        <button onClick={onCancel} style={{ fontSize:12, padding:'6px 13px', border:`0.5px solid #d0d0d0`, borderRadius:8, cursor:'pointer', background:'#fff', color:'#555', fontWeight:500 }}>Cancelar</button>
+        <button onClick={onSave} disabled={!ok} style={{ fontSize:12, padding:'6px 13px', borderRadius:8, cursor: ok ? 'pointer' : 'default', border:`0.5px solid ${ok ? BRAND : '#ddd'}`, background: ok ? BRAND : '#f0f0f0', color: ok ? '#fff' : '#ccc', fontWeight:500 }}>Salvar</button>
       </div>
     </div>
   )
 }
 
 function PersonForm({ data, onChange, onSave, onCancel, type, isNew }) {
+  const [criarLogin, setCriarLogin] = useState(false)
+  const [loginRole,  setLoginRole ] = useState(type === 'consultor' ? 'consultor' : 'cliente')
+  const [loginSenha, setLoginSenha] = useState('')
+
+  // sync senha padrão com telefone
+  useEffect(() => {
+    if (criarLogin) setLoginSenha(senhaFromTel(data.telefone || ''))
+  }, [data.telefone, criarLogin])
+
   const ok = (data.nome||'').trim()
   const fields = type==='consultor'
     ? [
@@ -534,9 +631,16 @@ function PersonForm({ data, onChange, onSave, onCancel, type, isNew }) {
         { key:'telefone',      label:'Telefone',          placeholder:'(XX) 9 XXXX-XXXX',        span:1 },
         { key:'email',         label:'E-mail',            placeholder:'exemplo@email.com',        span:1 },
       ]
+
+  function handleSave() {
+    if (!ok) return
+    const loginInfo = criarLogin ? { createLogin:true, role:loginRole, senha:loginSenha } : { createLogin:false }
+    onSave(loginInfo)
+  }
+
   return (
     <div style={{ background: isNew ? '#FAFCFA' : '#f8fbf9', border:`1.5px solid ${BRAND_BRD}`, borderRadius:12, padding:'1rem 1.2rem', marginBottom:'.75rem' }}>
-      <div style={{ fontSize:13, fontWeight:500, color:BRAND, marginBottom:'1rem' }}>{isNew ? '＋ Novo registro' : '✏️ Editando registro'}</div>
+      <div style={{ fontSize:13, fontWeight:500, color:BRAND, marginBottom:'1rem' }}>{isNew ? <><Icon ic={Plus} size={12} /> Novo registro</> : <><Icon ic={Pencil} size={12} /> Editando registro</>}</div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginBottom:'1rem' }}>
         {fields.map(f => (
           <div key={f.key} style={{ gridColumn: f.span===2 ? '1/-1' : 'auto' }}>
@@ -546,14 +650,50 @@ function PersonForm({ data, onChange, onSave, onCancel, type, isNew }) {
           </div>
         ))}
       </div>
+
+      {/* Seção de login — só no cadastro novo */}
+      {isNew && (
+        <div style={{ borderTop:`1px dashed ${BRAND_BRD}`, paddingTop:'.75rem', marginBottom:'.75rem' }}>
+          <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', userSelect:'none' }}>
+            <input type="checkbox" checked={criarLogin} onChange={e => setCriarLogin(e.target.checked)}
+              style={{ accentColor:BRAND, width:14, height:14 }} />
+            <span style={{ fontSize:12, fontWeight:500, color:BRAND }}>Criar acesso ao painel</span>
+          </label>
+          {criarLogin && (
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginTop:'.75rem' }}>
+              <div>
+                <label style={labelSt}>Nível de acesso</label>
+                <select value={loginRole} onChange={e => setLoginRole(e.target.value)}
+                  style={{ ...inputSt, cursor:'pointer' }}>
+                  {type === 'consultor' && <option value="consultor">Consultor</option>}
+                  {type === 'consultor' && <option value="coordenador">Coordenador</option>}
+                  {type !== 'consultor' && <option value="cliente">Cliente (somente leitura)</option>}
+                  {type !== 'consultor' && <option value="socio">Sócio</option>}
+                </select>
+              </div>
+              <div>
+                <label style={labelSt}>Senha de acesso</label>
+                <input style={inputSt} value={loginSenha} placeholder="Senha"
+                  onChange={e => setLoginSenha(e.target.value)} />
+                {(data.telefone||'').replace(/\D/g,'').length >= 4 && (
+                  <div style={{ fontSize:10, color:'#888', marginTop:3 }}>
+                    Pré-preenchida com os 4 primeiros dígitos do telefone
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
         <button onClick={onCancel} style={{ fontSize:12, padding:'6px 14px', border:'0.5px solid #ccc', borderRadius:7, cursor:'pointer', background:'#fff', color:'#666' }}>Cancelar</button>
-        <button onClick={() => ok && onSave()} style={{
+        <button onClick={handleSave} style={{
           fontSize:12, padding:'6px 16px', borderRadius:7, fontWeight:500,
           cursor: ok ? 'pointer' : 'not-allowed',
           border:`0.5px solid ${ok ? BRAND : '#ccc'}`,
           background: ok ? BRAND : '#ccc', color:'#fff',
-        }}>{isNew ? '＋ Adicionar' : '✓ Salvar'}</button>
+        }}>{isNew ? <><Icon ic={Plus} size={12} /> Adicionar</> : <><Icon ic={Check} size={12} /> Salvar</>}</button>
       </div>
     </div>
   )
@@ -569,7 +709,24 @@ function PeopleSection({ title, subtitle, type, people, onAdd, onUpdate, onDelet
   function startEdit(p) { setDeletingId(null); setShowAdd(false); setEditingId(p.id); setEditData({...p}) }
   function saveEdit()   { onUpdate(editingId, editData); setEditingId(null) }
   function confirmDel(id){ onDelete(id); setDeletingId(null) }
-  function saveAdd()    { onAdd(addData); setAddData(type==='consultor' ? emptyConsultor : emptyColab); setShowAdd(false) }
+  async function saveAdd(loginInfo) {
+    const newPerson = { ...addData, id: Date.now() }
+    onAdd(newPerson)
+    if (loginInfo?.createLogin && newPerson.nome && loginInfo.senha) {
+      const grupo = (loginInfo.role === 'consultor' || loginInfo.role === 'coordenador') ? 'gestao' : 'cliente'
+      await dbAddUsuario({
+        nome: newPerson.nome,
+        email: newPerson.email || '',
+        telefone: newPerson.telefone || '',
+        role: loginInfo.role,
+        cargo: type === 'consultor' ? (newPerson.especialidade || 'Consultor') : (newPerson.cargo || 'Colaborador'),
+        grupo,
+        senhaCustom: loginInfo.senha,
+      })
+    }
+    setAddData(type==='consultor' ? emptyConsultor : emptyColab)
+    setShowAdd(false)
+  }
 
   return (
     <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, overflow:'hidden', flex:1, minWidth:0 }}>
@@ -583,7 +740,7 @@ function PeopleSection({ title, subtitle, type, people, onAdd, onUpdate, onDelet
           <span style={{ fontSize:12, fontWeight:600, color: accentColor, background: accentColor+'1A', padding:'3px 10px', borderRadius:99 }}>{people.length}</span>
           <button onClick={() => { setShowAdd(s=>!s); setEditingId(null); setDeletingId(null) }}
             style={{ fontSize:12, padding:'6px 13px', border:`0.5px solid ${accentColor}`, borderRadius:8, cursor:'pointer', background: showAdd ? '#f0f0f0' : accentColor, color: showAdd ? '#555' : '#fff', fontWeight:500 }}>
-            {showAdd ? '✕' : '＋ Novo'}
+            {showAdd ? <Icon ic={X} size={13} /> : <><Icon ic={Plus} size={12} /> Novo</>}
           </button>
         </div>
       </div>
@@ -593,7 +750,7 @@ function PeopleSection({ title, subtitle, type, people, onAdd, onUpdate, onDelet
 
         {people.length === 0 && !showAdd && (
           <div style={{ textAlign:'center', padding:'2rem', color:'#bbb', fontSize:12 }}>
-            Nenhum registro ainda. Clique em "＋ Novo" para começar.
+            Nenhum registro ainda. Clique em "<Icon ic={Plus} size={16} /> Novo" para começar.
           </div>
         )}
 
@@ -603,7 +760,7 @@ function PeopleSection({ title, subtitle, type, people, onAdd, onUpdate, onDelet
               <div key={p.id} style={{ background:'#FCEBEB', border:'0.5px solid #F7C1C1', borderRadius:12, padding:'.9rem 1rem', display:'flex', alignItems:'center', gap:12 }}>
                 <span style={{ fontSize:12, color:'#791F1F', flex:1 }}>Remover <strong>"{p.nome}"</strong>?</span>
                 <button onClick={() => setDeletingId(null)} style={{ fontSize:11, padding:'5px 10px', border:'0.5px solid #ccc', borderRadius:6, cursor:'pointer', background:'#fff', color:'#666' }}>Cancelar</button>
-                <button onClick={() => confirmDel(p.id)} style={{ fontSize:11, padding:'5px 12px', border:'0.5px solid #A32D2D', borderRadius:6, cursor:'pointer', background:'#A32D2D', color:'#fff', fontWeight:500 }}>🗑 Remover</button>
+                <button onClick={() => confirmDel(p.id)} style={{ fontSize:11, padding:'5px 12px', border:'0.5px solid #A32D2D', borderRadius:6, cursor:'pointer', background:'#A32D2D', color:'#fff', fontWeight:500 }}><Icon ic={Trash2} size={11} /> Remover</button>
               </div>
             )
             if (editingId===p.id) return (
@@ -617,23 +774,89 @@ function PeopleSection({ title, subtitle, type, people, onAdd, onUpdate, onDelet
   )
 }
 
+function AreasSection({ areas, onAdd, onUpdate, onDelete }) {
+  const [showAdd,   setShowAdd]   = useState(false)
+  const [addData,   setAddData]   = useState(emptyArea)
+  const [editingId, setEditingId] = useState(null)
+  const [editData,  setEditData]  = useState({})
+  const [deletingId,setDeletingId]= useState(null)
+
+  function startEdit(a) { setDeletingId(null); setShowAdd(false); setEditingId(a.id); setEditData({...a}) }
+  function saveEdit()   { onUpdate(editingId, editData); setEditingId(null) }
+  function confirmDel(id){ onDelete(id); setDeletingId(null) }
+  function saveAdd() {
+    const newArea = { ...addData, id: Date.now() }
+    onAdd(newArea)
+    setAddData(emptyArea)
+    setShowAdd(false)
+  }
+
+  return (
+    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, overflow:'hidden', flex:1, minWidth:0 }}>
+      <div style={{ padding:'1rem 1.25rem', background: BRAND+'18', borderBottom:`0.5px solid ${BRAND}40`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div>
+          <div style={{ fontSize:15, fontWeight:600, color: BRAND }}>Áreas da Empresa</div>
+          <div style={{ fontSize:11, color:'#888', marginTop:2 }}>Configure as áreas para exibição nos processos</div>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <span style={{ fontSize:12, fontWeight:600, color: BRAND, background: BRAND+'1A', padding:'3px 10px', borderRadius:99 }}>{areas.length}</span>
+          <button onClick={() => { setShowAdd(s=>!s); setEditingId(null); setDeletingId(null) }}
+            style={{ fontSize:12, padding:'6px 13px', border:`0.5px solid ${BRAND}`, borderRadius:8, cursor:'pointer', background: showAdd ? '#f0f0f0' : BRAND, color: showAdd ? '#555' : '#fff', fontWeight:500 }}>
+            {showAdd ? <Icon ic={X} size={13} /> : <><Icon ic={Plus} size={12} /> Nova</>}
+          </button>
+        </div>
+      </div>
+
+      <div style={{ padding:'1rem' }}>
+        {showAdd && <AreaForm data={addData} onChange={setAddData} onSave={saveAdd} onCancel={() => setShowAdd(false)} isNew />}
+
+        {areas.length === 0 && !showAdd && (
+          <div style={{ textAlign:'center', padding:'2rem', color:'#bbb', fontSize:12 }}>
+            Nenhuma área configurada. Clique em "<Icon ic={Plus} size={16} /> Nova" para começar.
+          </div>
+        )}
+
+        <div style={{ display:'flex', flexDirection:'column', gap:'.6rem' }}>
+          {areas.map(a => {
+            if (deletingId===a.id) return (
+              <div key={a.id} style={{ background:'#FCEBEB', border:'0.5px solid #F7C1C1', borderRadius:12, padding:'.9rem 1rem', display:'flex', alignItems:'center', gap:12 }}>
+                <span style={{ fontSize:12, color:'#791F1F', flex:1 }}>Remover <strong>"{a.nome}"</strong>?</span>
+                <button onClick={() => setDeletingId(null)} style={{ fontSize:11, padding:'5px 10px', border:'0.5px solid #ccc', borderRadius:6, cursor:'pointer', background:'#fff', color:'#666' }}>Cancelar</button>
+                <button onClick={() => confirmDel(a.id)} style={{ fontSize:11, padding:'5px 12px', border:'0.5px solid #A32D2D', borderRadius:6, cursor:'pointer', background:'#A32D2D', color:'#fff', fontWeight:500 }}><Icon ic={Trash2} size={11} /> Remover</button>
+              </div>
+            )
+            if (editingId===a.id) return (
+              <AreaForm key={a.id} data={editData} onChange={setEditData} onSave={saveEdit} onCancel={() => setEditingId(null)} isNew={false} />
+            )
+            return <AreaCard key={a.id} area={a} onEdit={startEdit} onDelete={id => setDeletingId(id)} />
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function SolicitacoesPendentes() {
-  const [list, setList] = useState(() => getPending())
+  const [list, setList] = useState([])
 
-  function refresh() { setList(getPending()) }
+  async function refresh() {
+    const data = await dbGetSolicitacoes()
+    setList(data)
+  }
 
-  function aprovar(item) {
-    const approved = getApproved()
-    approved.push({ ...item, status:'aprovado', id: Date.now() })
-    setApproved(approved)
-    const upd = getPending().map(x => x.id === item.id ? { ...x, status:'aprovado' } : x)
-    setPending(upd)
+  useEffect(() => { refresh() }, [])
+
+  async function aprovar(item) {
+    await dbAddUsuario({
+      nome: item.nome, email: item.email, telefone: item.telefone,
+      role: item.role, cargo: item.cargo, grupo: item.grupo,
+    })
+    await dbUpdateSolicitacao(item.id, { status: 'aprovado' })
     refresh()
   }
 
-  function rejeitar(id) {
-    const upd = getPending().map(x => x.id === id ? { ...x, status:'rejeitado' } : x)
-    setPending(upd)
+  async function rejeitar(id) {
+    await dbUpdateSolicitacao(id, { status: 'rejeitado' })
     refresh()
   }
 
@@ -667,11 +890,11 @@ function SolicitacoesPendentes() {
                   {item.area && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:99, background:'#f0f0f0', color:'#666' }}>Área: {item.area}</span>}
                   {item.cargo && item.grupo === 'cliente' && item.role === 'colaborador' && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:99, background:'#f0f0f0', color:'#666' }}>{item.cargo}</span>}
                 </div>
-                <div style={{ fontSize:10, color:'#bbb', marginTop:3 }}>{new Date(item.dataSolicitacao).toLocaleString('pt-BR')}</div>
+                <div style={{ fontSize:10, color:'#bbb', marginTop:3 }}>{new Date(item.created_at || item.dataSolicitacao).toLocaleString('pt-BR')}</div>
               </div>
               <div style={{ display:'flex', gap:6, flexShrink:0 }}>
-                <button onClick={() => aprovar(item)} style={{ fontSize:11, padding:'5px 11px', border:`0.5px solid ${BRAND_MID}`, borderRadius:7, cursor:'pointer', background:BRAND_LIGHT, color:BRAND, fontWeight:500 }}>✅ Aprovar</button>
-                <button onClick={() => rejeitar(item.id)} style={{ fontSize:11, padding:'5px 11px', border:'0.5px solid #f5c6c6', borderRadius:7, cursor:'pointer', background:'#fff', color:'#A32D2D' }}>❌ Rejeitar</button>
+                <button onClick={() => aprovar(item)} style={{ fontSize:11, padding:'5px 11px', border:`0.5px solid ${BRAND_MID}`, borderRadius:7, cursor:'pointer', background:BRAND_LIGHT, color:BRAND, fontWeight:500 }}><Icon ic={CheckCircle} size={12} /> Aprovar</button>
+                <button onClick={() => rejeitar(item.id)} style={{ fontSize:11, padding:'5px 11px', border:'0.5px solid #f5c6c6', borderRadius:7, cursor:'pointer', background:'#fff', color:'#A32D2D' }}><Icon ic={XCircle} size={12} /> Rejeitar</button>
               </div>
             </div>
           </div>
@@ -681,7 +904,7 @@ function SolicitacoesPendentes() {
             <div style={{ fontSize:11, color:'#bbb', marginBottom:6 }}>Histórico</div>
             {outros.map(item => (
               <div key={item.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'.6rem .9rem', background:'#fafafa', borderRadius:8, marginBottom:4, opacity:.7 }}>
-                <span style={{ fontSize:18 }}>{item.status === 'aprovado' ? '✅' : '❌'}</span>
+                <span style={{ fontSize:18 }}>{item.status === 'aprovado' ? <Icon ic={CheckCircle} size={18} style={{color:BRAND_MID}} /> : <Icon ic={XCircle} size={18} style={{color:'#A32D2D'}} />}</span>
                 <div style={{ flex:1, fontSize:11, color:'#555' }}>{item.nome} — {item.email}</div>
                 <span style={{ fontSize:10, padding:'2px 8px', borderRadius:99, background: item.status==='aprovado' ? BRAND_LIGHT : '#FCEBEB', color: item.status==='aprovado' ? BRAND_MID : '#A32D2D' }}>{item.status}</span>
               </div>
@@ -695,14 +918,18 @@ function SolicitacoesPendentes() {
 
 function GerarConvites() {
   const [roleInv, setRoleInv] = useState('consultor')
-  const [invites, setInvitesState] = useState(() => getInvites())
+  const [invites, setInvitesState] = useState([])
   const [copied, setCopied] = useState(null)
   const BASE_URL = 'https://clientpanel-dashboard.vercel.app'
 
-  function gerarLink() {
+  useEffect(() => {
+    dbGetConvites().then(setInvitesState)
+  }, [])
+
+  async function gerarLink() {
     const token = Math.random().toString(36).slice(2,10)
-    const upd = [...getInvites(), { token, role: roleInv, status:'ativo', criadoEm: new Date().toISOString() }]
-    setInvites(upd)
+    await dbAddConvite(token, roleInv)
+    const upd = await dbGetConvites()
     setInvitesState(upd)
   }
 
@@ -730,7 +957,7 @@ function GerarConvites() {
             </select>
           </div>
           <button onClick={gerarLink} style={{ fontSize:12, padding:'7px 16px', borderRadius:8, border:`0.5px solid ${BRAND}`, background:BRAND, color:'#fff', cursor:'pointer', fontWeight:500, whiteSpace:'nowrap' }}>
-            🔗 Gerar Link
+            <Icon ic={Link} size={13} /> Gerar Link
           </button>
         </div>
 
@@ -749,7 +976,7 @@ function GerarConvites() {
                 <div style={{ fontSize:10, color:'#888', fontFamily:'monospace', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{url}</div>
               </div>
               <button onClick={() => copyLink(inv.token)} style={{ fontSize:11, padding:'5px 10px', border:`0.5px solid ${BRAND_BRD}`, borderRadius:7, cursor:'pointer', background: copied===inv.token ? BRAND_LIGHT : '#fff', color: copied===inv.token ? BRAND : '#555', whiteSpace:'nowrap', flexShrink:0 }}>
-                {copied===inv.token ? '✓ Copiado' : '📋 Copiar'}
+                {copied===inv.token ? <><Icon ic={Check} size={12} /> Copiado</> : <><Icon ic={ClipboardList} size={12} /> Copiar</>}
               </button>
             </div>
           )
@@ -759,7 +986,7 @@ function GerarConvites() {
   )
 }
 
-function Configuracoes({ colaboradores, consultores, onColabAdd, onColabUpdate, onColabDelete, onConsultorAdd, onConsultorUpdate, onConsultorDelete, user }) {
+function Configuracoes({ colaboradores, consultores, areas, onColabAdd, onColabUpdate, onColabDelete, onConsultorAdd, onConsultorUpdate, onConsultorDelete, onAreaAdd, onAreaUpdate, onAreaDelete, user }) {
   const isCoord = user?.role === 'coordenador'
   return (
     <div>
@@ -769,7 +996,9 @@ function Configuracoes({ colaboradores, consultores, onColabAdd, onColabUpdate, 
       {isCoord && <SolicitacoesPendentes />}
       {isCoord && <GerarConvites />}
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1.25rem', alignItems:'start' }}>
+      {isCoord && <AreasSection areas={areas} onAdd={onAreaAdd} onUpdate={onAreaUpdate} onDelete={onAreaDelete} />}
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1.25rem', alignItems:'start', marginTop: isCoord ? '1.25rem' : 0 }}>
         <PeopleSection
           title="Colaboradores / Atores"
           subtitle="Participantes da coleta de processos"
@@ -820,7 +1049,7 @@ function CalNavBar({ label, onPrev, onNext, onToday, mode, setMode }) {
 }
 
 // ─── Day view ─────────────────────────────────────────────────
-function AgendaDia({ meetings, viewDate, onToggle, onEdit, onNew }) {
+function AgendaDia({ user, meetings, viewDate, onToggle, onEdit, onNew, onUpdate }) {
   const ymd    = toYMD(viewDate)
   const evs    = meetings.filter(m => m.date===ymd)
   const totalH = HOURS.length * HOUR_H
@@ -848,17 +1077,32 @@ function AgendaDia({ meetings, viewDate, onToggle, onEdit, onNew }) {
               }}>
                 <div style={{ fontSize:12, fontWeight:500, color: m.canceled ? '#aaa' : c.txt, textDecoration: m.canceled ? 'line-through' : 'none' }}>{m.title}</div>
                 <div style={{ fontSize:11, color: m.canceled ? '#bbb' : c.brd, marginTop:2 }}>{p2(m.sh)}:{p2(m.sm)} – {p2(m.eh)}:{p2(m.em)}</div>
-                <div style={{ fontSize:11, color: m.canceled ? '#bbb' : c.brd }}>👤 {m.who}</div>
+                <div style={{ fontSize:10, color: m.canceled ? '#bbb' : c.brd, marginTop:3 }}>
+                  {Array.isArray(m.participantes) && m.participantes.length > 0 ? (
+                    <div style={{ display:'flex', flexWrap:'wrap', gap:3 }}>
+                      {m.participantes.map((p,i) => (
+                        <span key={i} style={{ padding:'2px 6px', background: 'rgba(0,0,0,.1)', borderRadius:4, whiteSpace:'nowrap' }}>{p}</span>
+                      ))}
+                    </div>
+                  ) : m.who ? (
+                    <span><Icon ic={User} size={10} /> {m.who}</span>
+                  ) : null}
+                </div>
                 {m.meetLink && !m.canceled && (
-                  <a href={m.meetLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                    style={{ marginTop:5, display:'inline-flex', alignItems:'center', gap:4, fontSize:10, fontWeight:500, color:'#fff', background:'#1a73e8', padding:'3px 9px', borderRadius:99, textDecoration:'none' }}>
-                    🎥 Entrar no Meet
-                  </a>
+                  <div style={{ marginTop:4, display:'flex', gap:4 }}>
+                    <a href={m.meetLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                      style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:9, fontWeight:500, color:'#fff', background:'#1a73e8', padding:'3px 8px', borderRadius:99, textDecoration:'none' }}>
+                      <Icon ic={Video} size={10} /> Entrar
+                    </a>
+                    {user && m.participantes?.includes(user.nome) && (
+                      <button onClick={e => { e.stopPropagation(); onUpdate(m.id, { participantes: m.participantes.filter(p => p !== user.nome) }) }} style={{ fontSize:9, padding:'3px 8px', border:'0.5px solid rgba(0,0,0,.2)', background:'rgba(0,0,0,.05)', borderRadius:99, cursor:'pointer' }}>Sair</button>
+                    )}
+                  </div>
                 )}
               </div>
             )
           })}
-          <div onClick={() => onNew && onNew(ymd)} style={{ position:'absolute', bottom:8, right:8, width:28, height:28, borderRadius:'50%', background:BRAND, color:'#fff', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 2px 8px rgba(0,0,0,.2)', userSelect:'none' }} title="Novo evento">＋</div>
+          <div onClick={() => onNew && onNew(ymd)} style={{ position:'absolute', bottom:8, right:8, width:28, height:28, borderRadius:'50%', background:BRAND, color:'#fff', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 2px 8px rgba(0,0,0,.2)', userSelect:'none' }} title="Novo evento"><Icon ic={Plus} size={16} /></div>
         </div>
       </div>
     </div>
@@ -866,7 +1110,7 @@ function AgendaDia({ meetings, viewDate, onToggle, onEdit, onNew }) {
 }
 
 // ─── Week view ────────────────────────────────────────────────
-function AgendaSemana({ meetings, viewDate, onToggle, onEdit, onNew }) {
+function AgendaSemana({ user, meetings, viewDate, onToggle, onEdit, onNew, onUpdate }) {
   const mon    = weekMon(viewDate)
   const cols   = Array.from({ length:5 }, (_, i) => addDays(mon, i))
   const totalH = HOURS.length * HOUR_H
@@ -904,7 +1148,7 @@ function AgendaSemana({ meetings, viewDate, onToggle, onEdit, onNew }) {
                     <div key={m.id} onClick={() => onEdit ? onEdit(m) : onToggle(m.id)} title="Clique para editar"
                       style={{ position:'absolute', top:top+2, left:2, right:2, height:ht-4, background: m.canceled ? '#f5f5f5' : c.bg, border:`1px solid ${m.canceled ? '#ddd' : c.brd}`, borderRadius:6, padding:'3px 5px', cursor:'pointer', overflow:'hidden', opacity: m.canceled ? .5 : 1 }}>
                       <div style={{ fontSize:10, fontWeight:500, color: m.canceled ? '#aaa' : c.txt, textDecoration: m.canceled?'line-through':'none', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
-                        {m.meetLink && !m.canceled && <span style={{ marginRight:3 }}>🎥</span>}{m.title}
+                        {m.meetLink && !m.canceled && <span style={{ marginRight:3 }}><Icon ic={Video} size={11} /></span>}{m.title}
                       </div>
                       {ht>36 && <div style={{ fontSize:9, color: m.canceled ? '#bbb' : c.brd, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{p2(m.sh)}:{p2(m.sm)}–{p2(m.eh)}:{p2(m.em)}</div>}
                       {ht>52 && m.meetLink && !m.canceled && (
@@ -927,7 +1171,7 @@ function AgendaSemana({ meetings, viewDate, onToggle, onEdit, onNew }) {
 }
 
 // ─── Month view ───────────────────────────────────────────────
-function AgendaMes({ meetings, viewDate, onToggle, onDrillDay }) {
+function AgendaMes({ user, meetings, viewDate, onToggle, onDrillDay, onUpdate }) {
   const cells = monthGrid(viewDate)
   const today = new Date()
   return (
@@ -964,7 +1208,7 @@ function AgendaMes({ meetings, viewDate, onToggle, onDrillDay }) {
 }
 
 // ─── Year view ────────────────────────────────────────────────
-function AgendaAno({ meetings, viewDate, onToggle, onDrillMonth }) {
+function AgendaAno({ user, meetings, viewDate, onToggle, onDrillMonth, onUpdate }) {
   const year  = viewDate.getFullYear()
   const today = new Date()
   return (
@@ -1004,7 +1248,7 @@ function AgendaAno({ meetings, viewDate, onToggle, onDrillMonth }) {
 }
 
 // ─── Agenda tab ───────────────────────────────────────────────
-function Agenda({ meetings, colaboradores, onAdd, onUpdate, onDelete, onToggle }) {
+function Agenda({ user, meetings, colaboradores, onAdd, onUpdate, onDelete, onToggle }) {
   const todayDt = new Date(); todayDt.setHours(12,0,0,0)
   const [viewDate,  setViewDate ] = useState(todayDt)
   const [mode,      setMode     ] = useState('semana')
@@ -1048,17 +1292,17 @@ function Agenda({ meetings, colaboradores, onAdd, onUpdate, onDelete, onToggle }
         <button onClick={() => openNew()} style={{
           fontSize:12, padding:'6px 14px', borderRadius:7, fontWeight:500, cursor:'pointer',
           border:`0.5px solid ${BRAND}`, background:BRAND, color:'#fff',
-        }}>＋ Novo evento</button>
+        }}><Icon ic={Plus} size={16} /> Novo evento</button>
       </div>
       <div style={{ fontSize:12, color:'#888', marginBottom:'1rem' }}>
         {upcoming.length} reunião(ões) futura(s)
         {canceled.length>0 && <span style={{ marginLeft:10, color:'#A32D2D' }}>· {canceled.length} cancelada(s)</span>}
       </div>
       <CalNavBar label={navLabel()} onPrev={() => navigate(-1)} onNext={() => navigate(1)} onToday={goToday} mode={mode} setMode={setMode} />
-      {mode==='dia'    && <AgendaDia    meetings={meetings} viewDate={viewDate} onToggle={onToggle} onEdit={openEdit} onNew={openNew} />}
-      {mode==='semana' && <AgendaSemana meetings={meetings} viewDate={viewDate} onToggle={onToggle} onEdit={openEdit} onNew={openNew} />}
-      {mode==='mês'    && <AgendaMes    meetings={meetings} viewDate={viewDate} onToggle={onToggle} onEdit={openEdit} onDrillDay={dt => { setViewDate(dt); setMode('dia') }} />}
-      {mode==='ano'    && <AgendaAno    meetings={meetings} viewDate={viewDate} onToggle={onToggle} onDrillMonth={dt => { setViewDate(dt); setMode('mês') }} />}
+      {mode==='dia'    && <AgendaDia    user={user} meetings={meetings} viewDate={viewDate} onToggle={onToggle} onEdit={openEdit} onNew={openNew} onUpdate={onUpdate} />}
+      {mode==='semana' && <AgendaSemana user={user} meetings={meetings} viewDate={viewDate} onToggle={onToggle} onEdit={openEdit} onNew={openNew} onUpdate={onUpdate} />}
+      {mode==='mês'    && <AgendaMes    user={user} meetings={meetings} viewDate={viewDate} onToggle={onToggle} onEdit={openEdit} onDrillDay={dt => { setViewDate(dt); setMode('dia') }} onUpdate={onUpdate} />}
+      {mode==='ano'    && <AgendaAno    user={user} meetings={meetings} viewDate={viewDate} onToggle={onToggle} onDrillMonth={dt => { setViewDate(dt); setMode('mês') }} onUpdate={onUpdate} />}
 
       {editingM && (
         <EventForm
@@ -1074,6 +1318,198 @@ function Agenda({ meetings, colaboradores, onAdd, onUpdate, onDelete, onToggle }
 }
 
 // ─── Dashboard ────────────────────────────────────────────────
+function DashboardSocio({ processes, areas, colaboradores, consultores }) {
+  const [selectedAreas, setSelectedAreas] = useState([])
+  const [selectedStages, setSelectedStages] = useState([])
+
+  const STAGES = [
+    { key: 'coleta', label: 'Coletado', color: '#6B7280' },
+    { key: 'modelagem', label: 'Modelado', color: '#F59E0B' },
+    { key: 'valCOPS', label: 'Val. COPS', color: '#3B82F6' },
+    { key: 'corrCOPS', label: 'Corr. COPS', color: '#8B5CF6' },
+    { key: 'valCliente', label: 'Val. Cliente', color: '#10B981' },
+    { key: 'analise', label: 'Análise', color: '#EC4899' },
+  ]
+
+  // Filtros
+  const filtered = processes.filter(p => {
+    const areaMatch = selectedAreas.length === 0 || (Array.isArray(p.area) ? p.area : [p.area]).some(a => selectedAreas.includes(a))
+    const stageMatch = selectedStages.length === 0 || selectedStages.some(s => p[s])
+    return areaMatch && stageMatch
+  })
+
+  // Métricas
+  const total = filtered.length
+  const byStage = {}
+  STAGES.forEach(s => { byStage[s.key] = filtered.filter(p => p[s.key]).length })
+  const completed = filtered.filter(p => p.confirmed).length
+  const avgPct = total ? Math.round(filtered.map(getPct).reduce((a, b) => a + b, 0) / total) : 0
+
+  // Contagem por área
+  const byArea = {}
+  areas.forEach(a => {
+    byArea[a.nome] = filtered.filter(p => {
+      const pa = Array.isArray(p.area) ? p.area : [p.area]
+      return pa.includes(a.nome)
+    }).length
+  })
+
+  const areaOpts = areas.map(a => a.nome)
+
+  return (
+    <div>
+      <div style={{ fontSize: 20, fontWeight: 500, color: '#111', marginBottom: '.2rem' }}>Dashboard Sócio</div>
+      <div style={{ fontSize: 12, color: '#888', marginBottom: '1.5rem' }}>Acompanhamento de processos por área e estágio</div>
+
+      {/* Filtros */}
+      <div style={{ background: '#fff', border: '0.5px solid #e2e8e4', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+          <div>
+            <label style={labelSt}>Filtrar por área</label>
+            <ChipSelect values={selectedAreas} onChange={setSelectedAreas} options={areaOpts} allowFreeText={false} placeholder="Todas as áreas" />
+          </div>
+          <div>
+            <label style={labelSt}>Filtrar por estágio</label>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {STAGES.map(s => (
+                <button
+                  key={s.key}
+                  onClick={() => setSelectedStages(st => st.includes(s.key) ? st.filter(x => x !== s.key) : [...st, s.key])}
+                  style={{
+                    fontSize: 11,
+                    padding: '5px 10px',
+                    borderRadius: 6,
+                    border: `0.5px solid ${selectedStages.includes(s.key) ? s.color : '#ddd'}`,
+                    background: selectedStages.includes(s.key) ? s.color + '15' : '#fff',
+                    color: selectedStages.includes(s.key) ? s.color : '#888',
+                    cursor: 'pointer',
+                    fontWeight: selectedStages.includes(s.key) ? 500 : 400,
+                  }}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Métricas */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.75rem', marginBottom: '1.25rem' }}>
+        {[
+          [`${total}`, 'Processos', BRAND, <Icon ic={FolderOpen} size={16} />],
+          [`${completed}/${total}`, 'Concluídos', completed === total && total > 0 ? BRAND_MID : ACCENT, <Icon ic={Check} size={16} />],
+          [`${avgPct}%`, 'Progresso médio', avgPct >= 70 ? BRAND_MID : ACCENT, <Icon ic={BarChart2} size={16} />],
+        ].map(([val, lbl, clr, ico]) => (
+          <div key={lbl} style={{ background: '#fff', border: '0.5px solid #e2e8e4', borderRadius: 12, padding: '.9rem 1rem', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 18, color: clr }}>{ico}</span>
+            <div><div style={{ fontSize: 18, fontWeight: 600, color: clr }}>{val}</div><div style={{ fontSize: 10, color: '#888', marginTop: 1 }}>{lbl}</div></div>
+          </div>
+        ))}
+      </div>
+
+      {/* Progresso por estágio */}
+      <div style={{ background: '#fff', border: '0.5px solid #e2e8e4', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1.25rem' }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: '#111', marginBottom: '1rem' }}>Distribuição por estágio</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '.75rem' }}>
+          {STAGES.map(s => {
+            const cnt = byStage[s.key] || 0
+            const pct = total ? Math.round((cnt / total) * 100) : 0
+            return (
+              <div key={s.key}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, color: '#555', fontWeight: 500 }}>{s.label}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: s.color }}>{cnt} ({pct}%)</span>
+                </div>
+                <div style={{ height: 6, background: '#eee', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${pct}%`, background: s.color, borderRadius: 99 }} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Distribuição por área */}
+      {areas.length > 0 && (
+        <div style={{ background: '#fff', border: '0.5px solid #e2e8e4', borderRadius: 12, padding: '1rem 1.2rem', marginBottom: '1.25rem' }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: '#111', marginBottom: '1rem' }}>Distribuição por área</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '.75rem' }}>
+            {areas.map(a => {
+              const cnt = byArea[a.nome] || 0
+              const pct = total ? Math.round((cnt / total) * 100) : 0
+              return (
+                <div key={a.nome}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: '#555', fontWeight: 500 }}>{a.nome}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: BRAND }}>{cnt} ({pct}%)</span>
+                  </div>
+                  <div style={{ height: 6, background: '#eee', borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: BRAND, borderRadius: 99 }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Tabela de processos filtrada */}
+      {filtered.length > 0 && (
+        <div style={{ background: '#fff', border: '0.5px solid #e2e8e4', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ padding: '.75rem 1rem', borderBottom: '0.5px solid #eee', fontSize: 13, fontWeight: 500, color: '#111' }}>Processos ({filtered.length})</div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ borderBottom: '0.5px solid #e2e8e4', background: '#f8f8f8' }}>
+                  <th style={{ padding: '.6rem 1rem', textAlign: 'left', color: '#555', fontWeight: 500 }}>Processo</th>
+                  <th style={{ padding: '.6rem 1rem', textAlign: 'left', color: '#555', fontWeight: 500 }}>Área(s)</th>
+                  <th style={{ padding: '.6rem 1rem', textAlign: 'center', color: '#555', fontWeight: 500 }}>Progresso</th>
+                  <th style={{ padding: '.6rem 1rem', textAlign: 'center', color: '#555', fontWeight: 500 }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(p => {
+                  const pct = getPct(p)
+                  return (
+                    <tr key={p.id} style={{ borderBottom: '0.5px solid #f0f0f0' }}>
+                      <td style={{ padding: '.6rem 1rem', color: '#111', fontWeight: 500 }}>{p.nome}</td>
+                      <td style={{ padding: '.6rem 1rem', color: '#666', fontSize: 11 }}>
+                        {(Array.isArray(p.area) ? p.area : [p.area]).join(', ')}
+                      </td>
+                      <td style={{ padding: '.6rem 1rem', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
+                          <div style={{ width: 60, height: 4, background: '#eee', borderRadius: 99 }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? BRAND : ACCENT, borderRadius: 99 }} />
+                          </div>
+                          <span style={{ fontSize: 10, color: '#888' }}>{pct}%</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '.6rem 1rem', textAlign: 'center' }}>
+                        {p.confirmed ? (
+                          <span style={{ padding: '2px 8px', borderRadius: 4, background: BRAND_LIGHT, color: BRAND, fontWeight: 500, fontSize: 10 }}>Concluído</span>
+                        ) : (
+                          <span style={{ padding: '2px 8px', borderRadius: 4, background: '#f5f5f5', color: '#888', fontSize: 10 }}>Em andamento</span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {filtered.length === 0 && (
+        <div style={{ background: '#fff', border: '0.5px solid #e2e8e4', borderRadius: 12, padding: '2rem', textAlign: 'center', color: '#bbb', fontSize: 12 }}>
+          Nenhum processo encontrado com os filtros aplicados.
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Dashboard({ meetings, processes }) {
   const today    = new Date(); today.setHours(12,0,0,0)
   const todayYMD = toYMD(today)
@@ -1090,8 +1526,8 @@ function Dashboard({ meetings, processes }) {
         {[
           ['Sprint 04','Mapeamento Core',BRAND,'📌'],
           [`${avgPct}%`,`${done}/${total} processos concluídos`, avgPct>=70?BRAND_MID:ACCENT,'🗂'],
-          [`${meetings.filter(m=>!m.canceled).length}`,'Reuniões confirmadas','#2D8A6F','✅'],
-          [canceled.length||'0', canceled.length?`${canceled.length} cancelada(s)`:'Nenhuma cancelada', canceled.length?'#A32D2D':'#888','⚠️'],
+          [`${meetings.filter(m=>!m.canceled).length}`,'Reuniões confirmadas','#2D8A6F',<><Icon ic={CheckCircle} size={16} /></>],
+          [canceled.length||'0', canceled.length?`${canceled.length} cancelada(s)`:'Nenhuma cancelada', canceled.length?'#A32D2D':'#888',<><Icon ic={AlertTriangle} size={14} /></>],
         ].map(([val,lbl,clr,ico]) => (
           <div key={lbl} style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:12, padding:'.9rem 1rem', display:'flex', alignItems:'center', gap:12 }}>
             <span style={{ fontSize:22 }}>{ico}</span>
@@ -1130,7 +1566,7 @@ function Dashboard({ meetings, processes }) {
                   {m.meetLink && (
                     <a href={m.meetLink} target="_blank" rel="noopener noreferrer"
                       style={{ fontSize:10, color:'#1a73e8', textDecoration:'none', display:'inline-flex', alignItems:'center', gap:3, marginTop:2 }}>
-                      🎥 Entrar no Meet
+                      <Icon ic={Video} size={11} /> Entrar no Meet
                     </a>
                   )}
                 </div>
@@ -1148,16 +1584,16 @@ function EventForm({ initial, colaboradores, onSave, onCancel, onDelete }) {
   const todayYMD = toYMD(new Date())
   const isEdit   = !!initial?.id
 
-  const [title,    setTitle   ] = useState(initial?.title    || 'Reunião de Coleta | DF Turismo')
-  const [date,     setDate    ] = useState(initial?.date     || todayYMD)
-  const [start,    setStart   ] = useState(initial ? `${p2(initial.sh)}:${p2(initial.sm)}` : '09:00')
-  const [end,      setEnd     ] = useState(initial ? `${p2(initial.eh)}:${p2(initial.em)}` : '10:00')
-  const [who,      setWho     ] = useState(initial?.who      || '')
-  const [desc,     setDesc    ] = useState(initial?.desc     || '')
-  const [meetLink, setMeetLink] = useState(initial?.meetLink || '')
-  const [loading,  setLoading ] = useState(false)
-  const [apiErr,   setApiErr  ] = useState(null)
-  const [success,  setSuccess ] = useState(null)
+  const [title,    setTitle    ] = useState(initial?.title      || 'Reunião de Coleta | DF Turismo')
+  const [date,     setDate     ] = useState(initial?.date       || todayYMD)
+  const [start,    setStart    ] = useState(initial?.sh !== undefined ? `${p2(initial.sh)}:${p2(initial.sm)}` : '09:00')
+  const [end,      setEnd      ] = useState(initial?.eh !== undefined ? `${p2(initial.eh)}:${p2(initial.em)}` : '10:00')
+  const [participantes, setParticipantes] = useState(Array.isArray(initial?.participantes) ? initial.participantes : [])
+  const [desc,     setDesc     ] = useState(initial?.desc      || '')
+  const [meetLink, setMeetLink ] = useState(initial?.meetLink   || '')
+  const [loading,  setLoading  ] = useState(false)
+  const [apiErr,   setApiErr   ] = useState(null)
+  const [success,  setSuccess  ] = useState(null)
 
   const [sh,sm] = start.split(':').map(Number)
   const [eh,em] = end.split(':').map(Number)
@@ -1173,7 +1609,7 @@ function EventForm({ initial, colaboradores, onSave, onCancel, onDelete }) {
       try {
         const res  = await fetch('/api/create-event', {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ title, processName: desc, date, sh, sm, eh, em, who }),
+          body: JSON.stringify({ title, processName: desc, date, sh, sm, eh, em, participantes }),
         })
         const json = await res.json()
         if (!res.ok) throw new Error(json.error || 'Erro desconhecido')
@@ -1183,7 +1619,7 @@ function EventForm({ initial, colaboradores, onSave, onCancel, onDelete }) {
     }
     setLoading(false)
     if (isEdit || !ml) {
-      onSave({ title, date, sh, sm, eh, em, who, desc, meetLink: ml||null, eventLink: el })
+      onSave({ title, date, sh, sm, eh, em, participantes, desc, meetLink: ml||null, eventLink: el })
     }
   }
 
@@ -1194,19 +1630,19 @@ function EventForm({ initial, colaboradores, onSave, onCancel, onDelete }) {
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.35)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }}>
       <div style={{ background:'#fff', borderRadius:14, padding:'1.25rem 1.5rem', width:420, maxWidth:'95vw', maxHeight:'90vh', overflowY:'auto', boxShadow:'0 8px 40px rgba(0,0,0,.18)' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem' }}>
-          <div style={{ fontSize:14, fontWeight:600, color:BRAND }}>{isEdit ? '✏️ Editar evento' : '＋ Novo evento'}</div>
+          <div style={{ fontSize:14, fontWeight:600, color:BRAND }}>{isEdit ? <><Icon ic={Pencil} size={11} /> Editar evento</> : <><Icon ic={Plus} size={16} /> Novo evento</>}</div>
           <button onClick={onCancel} style={{ border:'none', background:'none', fontSize:18, cursor:'pointer', color:'#999', lineHeight:1 }}>×</button>
         </div>
 
         {success && (
           <div style={{ background:'#EBF4EF', border:`0.5px solid ${BRAND_BRD}`, borderRadius:8, padding:'8px 10px', marginBottom:10, fontSize:11 }}>
-            ✅ <strong>Evento criado no Google Calendar!</strong>
-            {success.meetLink && <> · <a href={success.meetLink} target="_blank" rel="noopener noreferrer" style={{ color:'#1a73e8' }}>🎥 Entrar no Meet</a></>}
+            <Icon ic={CheckCircle} size={16} /> <strong>Evento criado no Google Calendar!</strong>
+            {success.meetLink && <> · <a href={success.meetLink} target="_blank" rel="noopener noreferrer" style={{ color:'#1a73e8' }}><Icon ic={Video} size={11} /> Entrar no Meet</a></>}
           </div>
         )}
         {apiErr && (
           <div style={{ background:'#FCEBEB', border:'0.5px solid #F7C1C1', borderRadius:8, padding:'7px 10px', marginBottom:10, fontSize:11, color:'#791F1F' }}>
-            ⚠️ Google Calendar: {apiErr} — evento salvo localmente.
+            <Icon ic={AlertTriangle} size={14} /> Google Calendar: {apiErr} — evento salvo localmente.
           </div>
         )}
 
@@ -1232,10 +1668,19 @@ function EventForm({ initial, colaboradores, onSave, onCancel, onDelete }) {
           </div>
         </div>
         <div style={{ marginBottom:8 }}>
-          <label style={labelSt}>Participante(s)</label>
-          <input list="ef-colab-list" value={who} onChange={e => setWho(e.target.value)} placeholder="Nome do participante"
-            style={{ ...inputSt, padding:'6px 10px' }} />
-          <datalist id="ef-colab-list">{colaboradores.map(c => <option key={c.id} value={c.nome} />)}</datalist>
+          <label style={labelSt}>Consultores e Participantes</label>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:8, minHeight:28 }}>
+            {participantes.map(p => (
+              <div key={p} style={{ display:'flex', alignItems:'center', gap:5, padding:'4px 10px', background:BRAND_LIGHT, border:`0.5px solid ${BRAND_MID}`, borderRadius:99, fontSize:11, color:BRAND }}>
+                {p}
+                <button onClick={() => setParticipantes(participantes.filter(x=>x!==p))} style={{ border:'none', background:'none', cursor:'pointer', fontSize:13, color:BRAND_MID, padding:'0 2px', lineHeight:1 }}>×</button>
+              </div>
+            ))}
+          </div>
+          <select onChange={e => { if(e.target.value && !participantes.includes(e.target.value)) setParticipantes([...participantes, e.target.value]); e.target.value='' }} style={{ ...inputSt, cursor:'pointer', padding:'6px 10px' }}>
+            <option value="">+ Selecionar participante…</option>
+            {colaboradores.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+          </select>
         </div>
         <div style={{ marginBottom:8 }}>
           <label style={labelSt}>Descrição / Processo</label>
@@ -1252,7 +1697,7 @@ function EventForm({ initial, colaboradores, onSave, onCancel, onDelete }) {
           <div>
             {isEdit && onDelete && (
               <button onClick={onDelete} style={{ fontSize:11, padding:'5px 12px', border:'0.5px solid #E24B4A', borderRadius:6, cursor:'pointer', background:'#fff', color:'#E24B4A' }}>
-                🗑 Excluir
+                <Icon ic={Trash2} size={11} /> Excluir
               </button>
             )}
           </div>
@@ -1267,11 +1712,11 @@ function EventForm({ initial, colaboradores, onSave, onCancel, onDelete }) {
                 background: valid&&!loading ? BRAND:'#ccc', color:'#fff',
                 cursor: valid&&!loading ? 'pointer':'not-allowed',
               }}>
-                {loading ? '⏳ Criando…' : isEdit ? '✓ Salvar alterações' : '🎥 Criar + Google Meet'}
+                {loading ? <><Icon ic={Loader2} size={13} /> Criando…</> : isEdit ? <><Icon ic={Check} size={12} /> Salvar alterações</> : <><Icon ic={Video} size={11} /> Criar + Google Meet</>}
               </button>
             )}
             {success && (
-              <button onClick={() => onSave({ title, date, sh, sm, eh, em, who, desc, meetLink: success.meetLink, eventLink: success.eventLink })}
+              <button onClick={() => onSave({ title, date, sh, sm, eh, em, participantes, desc, meetLink: success.meetLink, eventLink: success.eventLink })}
                 style={{ fontSize:11, padding:'5px 16px', borderRadius:6, fontWeight:500, border:`0.5px solid ${BRAND}`, background:BRAND, color:'#fff', cursor:'pointer' }}>
                 Fechar
               </button>
@@ -1311,7 +1756,7 @@ function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel
       const res  = await fetch('/api/create-event', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: processName, processName, date, sh, sm, eh, em, who }),
+        body: JSON.stringify({ title: processName, processName, date, sh, sm, eh, em, participantes: who ? [who] : [] }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Erro desconhecido')
@@ -1340,13 +1785,13 @@ function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel
       {/* success banner */}
       {success && (
         <div style={{ background:'#EBF4EF', border:`0.5px solid ${BRAND_BRD}`, borderRadius:8, padding:'8px 10px', marginBottom:10, display:'flex', alignItems:'center', gap:8 }}>
-          <span style={{ fontSize:14 }}>✅</span>
+          <span style={{ fontSize:14 }}><Icon ic={CheckCircle} size={16} /></span>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:11, fontWeight:500, color:BRAND }}>Evento criado no Google Calendar!</div>
             {success.meetLink && (
               <a href={success.meetLink} target="_blank" rel="noopener noreferrer"
                 style={{ fontSize:11, color:'#1a73e8', display:'inline-flex', alignItems:'center', gap:4, marginTop:2 }}>
-                🎥 Entrar no Google Meet
+                <Icon ic={Video} size={11} /> Entrar no Google Meet
               </a>
             )}
           </div>
@@ -1356,7 +1801,7 @@ function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel
       {/* error banner */}
       {apiErr && (
         <div style={{ background:'#FCEBEB', border:'0.5px solid #F7C1C1', borderRadius:8, padding:'7px 10px', marginBottom:10, fontSize:11, color:'#791F1F' }}>
-          ⚠️ Google Calendar: {apiErr} — reunião salva localmente.
+          <Icon ic={AlertTriangle} size={14} /> Google Calendar: {apiErr} — reunião salva localmente.
         </div>
       )}
 
@@ -1396,7 +1841,7 @@ function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel
             background: valid && !loading ? BRAND : '#ccc', color:'#fff',
             cursor: valid && !loading ? 'pointer' : 'not-allowed',
           }}>
-            {loading ? '⏳ Criando evento…' : '🎥 Agendar + Google Meet'}
+            {loading ? <><Icon ic={Loader2} size={13} /> Criando evento…</> : <><Icon ic={Video} size={11} /> Agendar + Google Meet</>}
           </button>
         )}
       </div>
@@ -1435,7 +1880,7 @@ function ChipSelect({ values, onChange, options, allowFreeText, placeholder }) {
       {available.length > 0 && (
         <select style={{ ...inputSt, cursor:'pointer', marginBottom: allowFreeText ? 6 : 0 }}
           value="" onChange={e => { add(e.target.value); e.target.value='' }}>
-          <option value="">{placeholder || '＋ Selecionar…'}</option>
+          <option value="">{placeholder || 'Selecionar…'}</option>
           {available.map(o => <option key={o} value={o}>{o}</option>)}
         </select>
       )}
@@ -1446,7 +1891,7 @@ function ChipSelect({ values, onChange, options, allowFreeText, placeholder }) {
             onKeyDown={e => e.key==='Enter' && commitFree()}
             placeholder="Colaborador externo… (Enter para adicionar)"
             style={{ ...inputSt, flex:1, fontSize:12 }} />
-          <button onClick={commitFree} style={{ fontSize:12, padding:'5px 10px', border:`0.5px solid ${BRAND_BRD}`, borderRadius:7, cursor:'pointer', background:BRAND_LIGHT, color:BRAND, whiteSpace:'nowrap' }}>＋</button>
+          <button onClick={commitFree} style={{ fontSize:12, padding:'5px 10px', border:`0.5px solid ${BRAND_BRD}`, borderRadius:7, cursor:'pointer', background:BRAND_LIGHT, color:BRAND, whiteSpace:'nowrap' }}><Icon ic={Plus} size={16} /></button>
         </div>
       )}
     </div>
@@ -1454,15 +1899,15 @@ function ChipSelect({ values, onChange, options, allowFreeText, placeholder }) {
 }
 
 // ─── Process Edit Form ────────────────────────────────────────
-function ProcEditForm({ data, onChange, onSave, onCancel, isNew, consultores, colaboradores }) {
-  const areaOpts     = [...new Set(colaboradores.map(c => c.cargo).filter(Boolean))]
+function ProcEditForm({ data, onChange, onSave, onCancel, isNew, consultores, colaboradores, areas }) {
+  const areaOpts     = areas.map(a => a.nome)
   const consultorOpts = consultores.map(c => c.nome)
   const colaborOpts   = colaboradores.map(c => c.nome)
   const ok = (data.nome||'').trim() && data.area?.length && data.comQuem?.length && data.consultor?.length
 
   return (
     <div style={{ background: isNew ? '#FAFCFA' : '#f8fbf9', border:`1.5px solid ${BRAND_BRD}`, borderRadius:12, padding:'1.1rem 1.2rem', marginBottom:'.6rem' }}>
-      <div style={{ fontSize:13, fontWeight:500, color:BRAND, marginBottom:'1rem' }}>{isNew ? '＋ Novo processo' : '✏️ Editando processo'}</div>
+      <div style={{ fontSize:13, fontWeight:500, color:BRAND, marginBottom:'1rem' }}>{isNew ? <><Icon ic={Plus} size={16} /> Novo processo</> : <><Icon ic={Pencil} size={11} /> Editando processo</>}</div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginBottom:'1rem' }}>
         <div style={{ gridColumn:'1/-1' }}>
           <label style={labelSt}>Nome do processo <span style={{ color:'#E24B4A' }}>*</span></label>
@@ -1471,7 +1916,7 @@ function ProcEditForm({ data, onChange, onSave, onCancel, isNew, consultores, co
         <div>
           <label style={labelSt}>Área(s) do processo <span style={{ color:'#E24B4A' }}>*</span></label>
           <ChipSelect values={data.area} onChange={v => onChange({ ...data, area:v })}
-            options={areaOpts} allowFreeText={false} placeholder="＋ Selecionar área…" />
+            options={areaOpts} allowFreeText={false} placeholder="Selecionar área…" />
         </div>
         <div>
           <label style={labelSt}>Formato do processo</label>
@@ -1482,18 +1927,18 @@ function ProcEditForm({ data, onChange, onSave, onCancel, isNew, consultores, co
         <div style={{ gridColumn:'1/-1' }}>
           <label style={labelSt}>Atores responsáveis (coleta) <span style={{ color:'#E24B4A' }}>*</span></label>
           <ChipSelect values={data.comQuem} onChange={v => onChange({ ...data, comQuem:v })}
-            options={colaborOpts} allowFreeText={true} placeholder="＋ Selecionar colaborador…" />
+            options={colaborOpts} allowFreeText={true} placeholder="Selecionar colaborador…" />
         </div>
         <div style={{ gridColumn:'1/-1' }}>
           <label style={labelSt}>Consultor(es) responsável(is) <span style={{ color:'#E24B4A' }}>*</span></label>
           <ChipSelect values={data.consultor} onChange={v => onChange({ ...data, consultor:v })}
-            options={consultorOpts} allowFreeText={false} placeholder="＋ Selecionar consultor…" />
+            options={consultorOpts} allowFreeText={false} placeholder="Selecionar consultor…" />
         </div>
       </div>
       <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
         <button onClick={onCancel} style={{ fontSize:12, padding:'6px 14px', border:'0.5px solid #ccc', borderRadius:7, cursor:'pointer', background:'#fff', color:'#666' }}>Cancelar</button>
         <button onClick={() => ok && onSave()} style={{ fontSize:12, padding:'6px 16px', borderRadius:7, fontWeight:500, cursor: ok ? 'pointer' : 'not-allowed', border:`0.5px solid ${ok ? BRAND : '#ccc'}`, background: ok ? BRAND : '#ccc', color:'#fff' }}>
-          {isNew ? '＋ Adicionar' : '✓ Salvar alterações'}
+          {isNew ? <><Icon ic={Plus} size={16} /> Adicionar</> : <><Icon ic={Check} size={12} /> Salvar alterações</>}
         </button>
       </div>
     </div>
@@ -1506,7 +1951,7 @@ function DeleteConfirm({ nome, onConfirm, onCancel }) {
     <div style={{ background:'#FCEBEB', border:'0.5px solid #F7C1C1', borderRadius:12, padding:'1rem 1.2rem', marginBottom:'.6rem', display:'flex', alignItems:'center', gap:12 }}>
       <span style={{ fontSize:13, color:'#791F1F', flex:1 }}>Excluir <strong>"{nome}"</strong>? Esta ação não pode ser desfeita.</span>
       <button onClick={onCancel} style={{ fontSize:12, padding:'5px 12px', border:'0.5px solid #ccc', borderRadius:7, cursor:'pointer', background:'#fff', color:'#666' }}>Cancelar</button>
-      <button onClick={onConfirm} style={{ fontSize:12, padding:'5px 14px', border:'0.5px solid #A32D2D', borderRadius:7, cursor:'pointer', background:'#A32D2D', color:'#fff', fontWeight:500 }}>🗑 Excluir</button>
+      <button onClick={onConfirm} style={{ fontSize:12, padding:'5px 14px', border:'0.5px solid #A32D2D', borderRadius:7, cursor:'pointer', background:'#A32D2D', color:'#fff', fontWeight:500 }}><Icon ic={Trash2} size={11} /> Excluir</button>
     </div>
   )
 }
@@ -1591,7 +2036,7 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting, cola
             {p.formato && <span style={{ fontSize:9, padding:'2px 7px', borderRadius:99, background:'#f0f0f0', color:'#777' }}>{fmtShort}</span>}
           </div>
           <div style={{ fontSize:11, color:'#888', marginTop:4 }}>
-            👤 {(Array.isArray(p.comQuem) ? p.comQuem : [p.comQuem]).filter(Boolean).join(', ') || '—'}
+            <Icon ic={User} size={11} /> {(Array.isArray(p.comQuem) ? p.comQuem : [p.comQuem]).filter(Boolean).join(', ') || '—'}
             {' · '}Consultor: {(Array.isArray(p.consultor) ? p.consultor : [p.consultor]).filter(Boolean).join(', ') || '—'}
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:7 }}>
@@ -1604,14 +2049,14 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting, cola
         </div>
         <div style={{ display:'flex', gap:5, flexWrap:'wrap', justifyContent:'flex-end' }}>
           {canSchedule && <button onClick={() => setScheduling(s => !s)} title="Agendar reunião" style={{ fontSize:11, padding:'4px 9px', borderRadius:6, cursor:'pointer', border: scheduling ? `0.5px solid ${BRAND_MID}` : '0.5px solid #d0d0d0', background: scheduling ? BRAND_LIGHT : '#fff', color: scheduling ? BRAND : '#555' }}>📅</button>}
-          {canEdit && !p.confirmed && <button onClick={() => onEdit(p)} title="Editar" style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #d0d0d0', borderRadius:6, cursor:'pointer', background:'#fff', color:'#555' }}>✏️</button>}
-          {canEdit && !p.confirmed && <button onClick={() => onDelete(p.id)} title="Excluir" style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #f5c6c6', borderRadius:6, cursor:'pointer', background:'#fff', color:'#A32D2D' }}>🗑</button>}
+          {canEdit && !p.confirmed && <button onClick={() => onEdit(p)} title="Editar" style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #d0d0d0', borderRadius:6, cursor:'pointer', background:'#fff', color:'#555' }}><Icon ic={Pencil} size={11} /></button>}
+          {canEdit && !p.confirmed && <button onClick={() => onDelete(p.id)} title="Excluir" style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #f5c6c6', borderRadius:6, cursor:'pointer', background:'#fff', color:'#A32D2D' }}><Icon ic={Trash2} size={11} /></button>}
           {canConfirm && <button onClick={() => ready && onConfirm(p.id)} style={{
             fontSize:11, padding:'5px 11px', borderRadius:7, whiteSpace:'nowrap', cursor: ready ? 'pointer' : 'default',
             border: p.confirmed ? `0.5px solid ${BRAND_BRD}` : ready ? `0.5px solid ${BRAND}` : '0.5px solid #ddd',
             background: p.confirmed ? BRAND_LIGHT : ready ? BRAND : '#f8f8f8',
             color: p.confirmed ? BRAND_MID : ready ? '#fff' : '#ccc', fontWeight: ready ? 500 : 400,
-          }}>{p.confirmed ? '🔒 Concluído' : ready ? '✓ Confirmar' : 'Pendente'}</button>}
+          }}>{p.confirmed ? <><Icon ic={Lock} size={11} /> Concluído</> : ready ? <><Icon ic={Check} size={12} /> Confirmar</> : 'Pendente'}</button>}
         </div>
       </div>
       {canEdit && (
@@ -1624,7 +2069,7 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting, cola
                   borderRadius:8, padding:'8px 4px 6px', textAlign:'center', transition:'all .18s', userSelect:'none',
                   background: checked ? BRAND : '#f8f8f8', border:`1.5px ${checked ? 'solid' : 'dashed'} ${checked ? BRAND_MID : '#d0d0d0'}`, cursor: p.confirmed ? 'default' : 'pointer',
                 }}>
-                  <div style={{ width:22, height:22, borderRadius:'50%', margin:'0 auto 5px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, background: checked ? 'rgba(255,255,255,.2)' : '#ebebeb', border:`1.5px solid ${checked ? 'rgba(255,255,255,.4)' : '#d5d5d5'}`, color: checked ? '#fff' : '#ccc' }}>{checked ? '✓' : ''}</div>
+                  <div style={{ width:22, height:22, borderRadius:'50%', margin:'0 auto 5px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, background: checked ? 'rgba(255,255,255,.2)' : '#ebebeb', border:`1.5px solid ${checked ? 'rgba(255,255,255,.4)' : '#d5d5d5'}`, color: checked ? '#fff' : '#ccc' }}>{checked ? <Icon ic={Check} size={12} /> : ''}</div>
                   <div style={{ fontSize:9, fontWeight: checked ? 500 : 400, color: checked ? 'rgba(255,255,255,.9)' : '#aaa', lineHeight:1.3 }}>{label}</div>
                 </div>
               )
@@ -1640,7 +2085,7 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting, cola
       {/* Comments section */}
       <div style={{ borderTop:'0.5px solid #f0f0f0', marginTop:10, paddingTop:8 }}>
         <div onClick={() => setShowComments(s => !s)} style={{ display:'flex', alignItems:'center', gap:6, cursor:'pointer', fontSize:11, color:'#666', userSelect:'none' }}>
-          <span>💬 Comentários ({comentarios.length})</span>
+          <span><Icon ic={MessageSquare} size={13} /> Comentários ({comentarios.length})</span>
           <span style={{ fontSize:10, color:'#bbb' }}>{showComments ? '▲' : '▼'}</span>
         </div>
         {showComments && (
@@ -1657,7 +2102,7 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting, cola
 }
 
 // ─── Processos tab ────────────────────────────────────────────
-function Processos({ processes, consultores, colaboradores, onToggle, onConfirm, onAdd, onUpdate, onDelete, onAddMeeting, user, onAddComment }) {
+function Processos({ processes, consultores, colaboradores, areas, onToggle, onConfirm, onAdd, onUpdate, onDelete, onAddMeeting, user, onAddComment }) {
   const [editingId, setEditingId]  = useState(null)
   const [editData,  setEditData]   = useState({})
   const [deletingId,setDeletingId] = useState(null)
@@ -1684,18 +2129,18 @@ function Processos({ processes, consultores, colaboradores, onToggle, onConfirm,
         {canEdit && (
           <button onClick={() => { setShowAdd(s=>!s); setEditingId(null); setDeletingId(null) }}
             style={{ fontSize:12, padding:'7px 15px', border:`0.5px solid ${BRAND}`, borderRadius:8, cursor:'pointer', background: showAdd ? '#f0f0f0' : BRAND, color: showAdd ? '#555' : '#fff', fontWeight:500, flexShrink:0, marginTop:2 }}>
-            {showAdd ? '✕ Cancelar' : '＋ Novo processo'}
+            {showAdd ? <><Icon ic={X} size={12} /> Cancelar</> : <><Icon ic={Plus} size={16} /> Novo processo</>}
           </button>
         )}
       </div>
 
       {consultores.length===0 && (
         <div style={{ background:ACCENT_LT, border:`0.5px solid ${ACCENT}`, borderRadius:10, padding:'.75rem 1rem', marginBottom:'1rem', fontSize:12, color:'#7A5F10' }}>
-          ⚠️ Nenhum consultor cadastrado ainda. Acesse <strong>Configurações</strong> para registrar consultores.
+          <Icon ic={AlertTriangle} size={14} /> Nenhum consultor cadastrado ainda. Acesse <strong>Configurações</strong> para registrar consultores.
         </div>
       )}
 
-      {showAdd && <ProcEditForm data={addData} onChange={setAddData} onSave={saveAdd} onCancel={() => setShowAdd(false)} isNew consultores={consultores} colaboradores={colaboradores} />}
+      {showAdd && <ProcEditForm data={addData} onChange={setAddData} onSave={saveAdd} onCancel={() => setShowAdd(false)} isNew consultores={consultores} colaboradores={colaboradores} areas={areas} />}
 
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'.75rem', marginBottom:'1rem' }}>
         {[['Total',total,'#111'],['Em andamento',processes.filter(p=>getPct(p)>0&&!p.confirmed).length,'#BA7517'],['Concluídos',done,BRAND_MID],['Progresso',`${avgPct}%`,BRAND]].map(([l,v,c]) => (
@@ -1719,12 +2164,12 @@ function Processos({ processes, consultores, colaboradores, onToggle, onConfirm,
       <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:'.75rem', fontSize:11, color:'#888', flexWrap:'wrap' }}>
         <span style={{ display:'flex', alignItems:'center', gap:5 }}><span style={{ width:14, height:14, borderRadius:4, background:BRAND, display:'inline-block' }} /> Etapa concluída</span>
         <span style={{ display:'flex', alignItems:'center', gap:5 }}><span style={{ width:14, height:14, borderRadius:4, border:'1.5px dashed #d0d0d0', display:'inline-block' }} /> Pendente</span>
-        <span style={{ marginLeft:'auto', fontSize:10, color:'#ccc' }}>📅 agendar · ✏️ editar · 🗑 excluir</span>
+        <span style={{ marginLeft:'auto', fontSize:10, color:'#ccc' }}>📅 agendar · <Icon ic={Pencil} size={11} /> editar · <Icon ic={Trash2} size={11} /> excluir</span>
       </div>
 
       {processes.map(p => {
         if (deletingId===p.id) return <DeleteConfirm key={p.id} nome={p.nome} onConfirm={() => { onDelete(p.id); setDeletingId(null) }} onCancel={() => setDeletingId(null)} />
-        if (editingId===p.id)  return <ProcEditForm key={p.id} data={editData} onChange={setEditData} onSave={saveEdit} onCancel={() => setEditingId(null)} isNew={false} consultores={consultores} colaboradores={colaboradores} />
+        if (editingId===p.id)  return <ProcEditForm key={p.id} data={editData} onChange={setEditData} onSave={saveEdit} onCancel={() => setEditingId(null)} isNew={false} consultores={consultores} colaboradores={colaboradores} areas={areas} />
         return <ProcCard key={p.id} p={p} onToggle={onToggle} onConfirm={onConfirm} onEdit={startEdit} onDelete={handleDel} onAddMeeting={onAddMeeting} colaboradores={colaboradores} user={user} onAddComment={onAddComment} />
       })}
     </div>
@@ -1732,7 +2177,27 @@ function Processos({ processes, consultores, colaboradores, onToggle, onConfirm,
 }
 
 // ─── Levantamento tab ─────────────────────────────────────────
-function Levantamento({ consultores, colaboradores, onAdd, onGoProcessos }) {
+function ColaboradoresTab({ colaboradores, onAdd, onUpdate, onDelete }) {
+  return (
+    <div>
+      <div style={{ fontSize:20, fontWeight:500, color:'#111', marginBottom:'.2rem' }}>Colaboradores</div>
+      <div style={{ fontSize:12, color:'#888', marginBottom:'1.5rem' }}>Gerencie os colaboradores da sua empresa</div>
+
+      <PeopleSection
+        title="Colaboradores / Atores"
+        subtitle="Participantes da coleta de processos"
+        type="colaborador"
+        people={colaboradores}
+        onAdd={onAdd}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+        accentColor="#6B7280"
+      />
+    </div>
+  )
+}
+
+function Levantamento({ consultores, colaboradores, areas, onAdd, onGoProcessos }) {
   const [data,    setData   ] = useState({ nome:'', area:[], comQuem:[], consultor:[], formato:FORMATO_OPTS[0] })
   const [success, setSuccess] = useState(false)
 
@@ -1749,11 +2214,11 @@ function Levantamento({ consultores, colaboradores, onAdd, onGoProcessos }) {
 
       {success ? (
         <div style={{ background:BRAND_LIGHT, border:`0.5px solid ${BRAND_BRD}`, borderRadius:12, padding:'1.5rem', textAlign:'center' }}>
-          <div style={{ fontSize:22, marginBottom:8 }}>✅</div>
+          <div style={{ fontSize:22, marginBottom:8 }}><Icon ic={CheckCircle} size={16} /></div>
           <div style={{ fontSize:14, fontWeight:500, color:BRAND, marginBottom:4 }}>Processo lançado!</div>
           <div style={{ fontSize:12, color:'#555', marginBottom:'1.25rem' }}>Acesse a aba Processos para acompanhar.</div>
           <div style={{ display:'flex', gap:8, justifyContent:'center' }}>
-            <button onClick={() => setSuccess(false)} style={{ fontSize:12, padding:'7px 16px', border:`0.5px solid ${BRAND_BRD}`, borderRadius:8, cursor:'pointer', background:'#fff', color:BRAND }}>＋ Lançar outro</button>
+            <button onClick={() => setSuccess(false)} style={{ fontSize:12, padding:'7px 16px', border:`0.5px solid ${BRAND_BRD}`, borderRadius:8, cursor:'pointer', background:'#fff', color:BRAND }}><Icon ic={Plus} size={16} /> Lançar outro</button>
             <button onClick={onGoProcessos} style={{ fontSize:12, padding:'7px 16px', border:`0.5px solid ${BRAND}`, borderRadius:8, cursor:'pointer', background:BRAND, color:'#fff', fontWeight:500 }}>Ver Processos</button>
           </div>
         </div>
@@ -1766,6 +2231,7 @@ function Levantamento({ consultores, colaboradores, onAdd, onGoProcessos }) {
           isNew
           consultores={consultores}
           colaboradores={colaboradores}
+          areas={areas}
         />
       )}
     </div>
@@ -1778,10 +2244,12 @@ export default function App() {
     try { const s = localStorage.getItem('pcUser'); return s ? JSON.parse(s) : null } catch { return null }
   })
   const [tab,          setTab         ] = useState('dashboard')
-  const [meetings,     setMeetings    ] = useState(initMeetings)
-  const [processes,    setProcesses   ] = useState(initProcesses)
-  const [colaboradores,setColaboradores]= useState(initColaboradores)
-  const [consultores,  setConsultores ] = useState(initConsultores)
+  const [meetings,     setMeetings    ] = useState([])
+  const [processes,    setProcesses   ] = useState([])
+  const [colaboradores,setColaboradores]= useState([])
+  const [consultores,  setConsultores ] = useState([])
+  const [areas,        setAreas       ] = useState([])
+  const [dataLoaded,   setDataLoaded  ] = useState(false)
   const [showCadastro, setShowCadastro] = useState(false)
 
   // Check URL for invite token on mount
@@ -1792,45 +2260,157 @@ export default function App() {
   // Auto-open cadastro if invite token in URL
   useEffect(() => {
     if (inviteToken && !user) {
-      const invites = getInvites()
-      const inv = invites.find(i => i.token === inviteToken && i.status === 'ativo')
-      if (inv) setShowCadastro(true)
+      dbGetConvite(inviteToken).then(inv => { if (inv) setShowCadastro(true) })
     }
   }, [])
 
-  // Set default tab per role after login
+  // Carrega dados do Supabase após login
   useEffect(() => {
     if (!user) return
     if (user.role === 'socio' || user.role === 'cliente') setTab('processos')
     else setTab('dashboard')
+    Promise.all([
+      dbGetEventos(),
+      dbGetProcessos(),
+      dbGetColaboradores(),
+      dbGetConsultores(),
+      dbGetAreas(),
+    ]).then(([evts, procs, colabs, consults, areas]) => {
+      setMeetings(evts)
+      setProcesses(procs)
+      setColaboradores(colabs)
+      setConsultores(consults)
+      setAreas(areas)
+      setDataLoaded(true)
+    })
   }, [user?.id])
 
   function handleLogin(u) { setUser(u); setShowCadastro(false) }
   function handleLogout() { localStorage.removeItem('pcUser'); setUser(null) }
 
-  // Meetings
-  const handleMeetingToggle = id   => setMeetings(ms => ms.map(m => m.id===id ? {...m, canceled:!m.canceled} : m))
-  const handleAddMeeting    = data => { setMeetings(ms => [...ms, { id:nextMeetingId++, canceled:false, ci:nextMeetingId%5, ...data }]); setTab('agenda') }
-  const handleUpdateMeeting = (id,data) => setMeetings(ms => ms.map(m => m.id===id ? {...m, ...data} : m))
-  const handleDeleteMeeting = id   => setMeetings(ms => ms.filter(m => m.id!==id))
+  // ── Meetings ──────────────────────────────────────────────────
+  const handleMeetingToggle = id => {
+    setMeetings(ms => {
+      const upd = ms.map(m => m.id===id ? {...m, canceled:!m.canceled} : m)
+      const evt = upd.find(m => m.id===id)
+      if (evt) dbSaveEvento(id, evt)
+      return upd
+    })
+  }
+  const handleAddMeeting = async data => {
+    const novo = await dbAddEvento({ canceled:false, ci: Math.floor(Math.random()*5), ...data })
+    setMeetings(ms => [...ms, novo])
+    setTab('agenda')
+  }
+  const handleUpdateMeeting = (id, data) => {
+    setMeetings(ms => {
+      const upd = ms.map(m => m.id===id ? {...m, ...data} : m)
+      const evt = upd.find(m => m.id===id)
+      if (evt) dbSaveEvento(id, evt)
+      return upd
+    })
+  }
+  const handleDeleteMeeting = id => {
+    setMeetings(ms => ms.filter(m => m.id!==id))
+    dbDeleteEvento(id)
+  }
 
-  // Processes
-  const handleProcToggle = (id,key) => setProcesses(ps => ps.map(p => p.id===id && !p.confirmed ? {...p, [key]:!p[key]} : p))
-  const handleConfirm    = id  => setProcesses(ps => ps.map(p => p.id===id && getPct(p)===100 ? {...p, confirmed:true} : p))
-  const handleProcDelete = id  => setProcesses(ps => ps.filter(p => p.id!==id))
-  const handleProcUpdate = (id,data) => setProcesses(ps => ps.map(p => p.id===id ? {...p,...data} : p))
-  const handleProcAdd    = data => { const newNum = processes.length ? Math.max(...processes.map(p=>p.num))+1 : 1; setProcesses(ps => [...ps, { ...emptyStages, comentarios:[], id:nextProcId++, num:newNum, confirmed:false, ...data }]) }
-  const handleAddComment = (procId, comentario) => setProcesses(ps => ps.map(p => p.id===procId ? {...p, comentarios:[...(p.comentarios||[]), comentario]} : p))
+  // ── Processos ─────────────────────────────────────────────────
+  const handleProcToggle = (id, key) => {
+    setProcesses(ps => {
+      const upd = ps.map(p => p.id===id && !p.confirmed ? {...p, [key]:!p[key]} : p)
+      const proc = upd.find(p => p.id===id)
+      if (proc) dbSaveProcesso(id, proc)
+      return upd
+    })
+  }
+  const handleConfirm = id => {
+    setProcesses(ps => {
+      const upd = ps.map(p => p.id===id && getPct(p)===100 ? {...p, confirmed:true} : p)
+      const proc = upd.find(p => p.id===id)
+      if (proc) dbSaveProcesso(id, proc)
+      return upd
+    })
+  }
+  const handleProcDelete = id => {
+    setProcesses(ps => ps.filter(p => p.id!==id))
+    dbDeleteProcesso(id)
+  }
+  const handleProcUpdate = (id, data) => {
+    setProcesses(ps => {
+      const upd = ps.map(p => p.id===id ? {...p, ...data} : p)
+      const proc = upd.find(p => p.id===id)
+      if (proc) dbSaveProcesso(id, proc)
+      return upd
+    })
+  }
+  const handleProcAdd = async data => {
+    const newNum = processes.length ? Math.max(...processes.map(p=>p.num))+1 : 1
+    const novo = await dbAddProcesso({ ...emptyStages, comentarios:[], num:newNum, confirmed:false, ...data })
+    setProcesses(ps => [...ps, novo])
+  }
+  const handleAddComment = (procId, comentario) => {
+    setProcesses(ps => {
+      const upd = ps.map(p => p.id===procId ? {...p, comentarios:[...(p.comentarios||[]), comentario]} : p)
+      const proc = upd.find(p => p.id===procId)
+      if (proc) dbSaveProcesso(procId, proc)
+      return upd
+    })
+  }
 
-  // Colaboradores
-  const handleColabAdd    = data => setColaboradores(cs => [...cs, { id:nextColabId++, ...data }])
-  const handleColabUpdate = (id,data) => setColaboradores(cs => cs.map(c => c.id===id ? {...c,...data} : c))
-  const handleColabDelete = id  => setColaboradores(cs => cs.filter(c => c.id!==id))
+  // ── Colaboradores ─────────────────────────────────────────────
+  const handleColabAdd = async data => {
+    const novo = await dbAddColaborador(data)
+    setColaboradores(cs => [...cs, novo])
+  }
+  const handleColabUpdate = (id, data) => {
+    setColaboradores(cs => {
+      const upd = cs.map(c => c.id===id ? {...c, ...data} : c)
+      const colab = upd.find(c => c.id===id)
+      if (colab) dbSaveColaborador(id, colab)
+      return upd
+    })
+  }
+  const handleColabDelete = id => {
+    setColaboradores(cs => cs.filter(c => c.id!==id))
+    dbDeleteColaborador(id)
+  }
 
-  // Consultores
-  const handleConsultorAdd    = data => setConsultores(cs => [...cs, { id:nextConsultorId++, ...data }])
-  const handleConsultorUpdate = (id,data) => setConsultores(cs => cs.map(c => c.id===id ? {...c,...data} : c))
-  const handleConsultorDelete = id  => setConsultores(cs => cs.filter(c => c.id!==id))
+  // ── Consultores ───────────────────────────────────────────────
+  const handleConsultorAdd = async data => {
+    const novo = await dbAddConsultor(data)
+    setConsultores(cs => [...cs, novo])
+  }
+  const handleConsultorUpdate = (id, data) => {
+    setConsultores(cs => {
+      const upd = cs.map(c => c.id===id ? {...c, ...data} : c)
+      const cons = upd.find(c => c.id===id)
+      if (cons) dbSaveConsultor(id, cons)
+      return upd
+    })
+  }
+  const handleConsultorDelete = id => {
+    setConsultores(cs => cs.filter(c => c.id!==id))
+    dbDeleteConsultor(id)
+  }
+
+  // ── Áreas ──────────────────────────────────────────────────────
+  const handleAreaAdd = async data => {
+    const novo = await dbAddArea(data)
+    setAreas(as => [...as, novo])
+  }
+  const handleAreaUpdate = (id, data) => {
+    setAreas(as => {
+      const upd = as.map(a => a.id===id ? {...a, ...data} : a)
+      const area = upd.find(a => a.id===id)
+      if (area) dbSaveArea(id, area)
+      return upd
+    })
+  }
+  const handleAreaDelete = id => {
+    setAreas(as => as.filter(a => a.id!==id))
+    dbDeleteArea(id)
+  }
 
   if (!user) {
     if (showCadastro) return <CadastroScreen onBack={() => setShowCadastro(false)} inviteToken={inviteToken} />
@@ -1841,27 +2421,39 @@ export default function App() {
     <div style={{ display:'flex', minHeight:'100vh', background:'#f0f2f0' }}>
       <Sidebar tab={tab} setTab={setTab} user={user} onLogout={handleLogout} />
       <main style={{ flex:1, padding:'1.5rem', overflowY:'auto', minWidth:0 }}>
-        {tab==='dashboard'     && <Dashboard meetings={meetings} processes={processes} />}
-        {tab==='agenda'        && <Agenda meetings={meetings} colaboradores={colaboradores} onToggle={handleMeetingToggle} onAdd={handleAddMeeting} onUpdate={handleUpdateMeeting} onDelete={handleDeleteMeeting} />}
+        {tab==='dashboard' && user?.role === 'socio' && (
+          <DashboardSocio processes={processes} areas={areas} colaboradores={colaboradores} consultores={consultores} />
+        )}
+        {tab==='dashboard' && user?.role !== 'socio' && (
+          <Dashboard meetings={meetings} processes={processes} />
+        )}
+        {tab==='agenda'        && <Agenda user={user} meetings={meetings} colaboradores={colaboradores} onToggle={handleMeetingToggle} onAdd={handleAddMeeting} onUpdate={handleUpdateMeeting} onDelete={handleDeleteMeeting} />}
         {tab==='levantamento'  && (
           <Levantamento
-            consultores={consultores} colaboradores={colaboradores}
+            consultores={consultores} colaboradores={colaboradores} areas={areas}
             onAdd={handleProcAdd} onGoProcessos={() => setTab('processos')}
           />
         )}
         {tab==='processos'     && (
           <Processos
-            processes={processes} consultores={consultores} colaboradores={colaboradores}
+            processes={processes} consultores={consultores} colaboradores={colaboradores} areas={areas}
             onToggle={handleProcToggle} onConfirm={handleConfirm}
             onAdd={handleProcAdd} onUpdate={handleProcUpdate} onDelete={handleProcDelete}
             onAddMeeting={handleAddMeeting} user={user} onAddComment={handleAddComment}
           />
         )}
+        {tab==='colaboradores' && (
+          <ColaboradoresTab
+            colaboradores={colaboradores}
+            onAdd={handleColabAdd} onUpdate={handleColabUpdate} onDelete={handleColabDelete}
+          />
+        )}
         {tab==='configuracoes' && (
           <Configuracoes
-            colaboradores={colaboradores} consultores={consultores}
+            colaboradores={colaboradores} consultores={consultores} areas={areas}
             onColabAdd={handleColabAdd} onColabUpdate={handleColabUpdate} onColabDelete={handleColabDelete}
             onConsultorAdd={handleConsultorAdd} onConsultorUpdate={handleConsultorUpdate} onConsultorDelete={handleConsultorDelete}
+            onAreaAdd={handleAreaAdd} onAreaUpdate={handleAreaUpdate} onAreaDelete={handleAreaDelete}
             user={user}
           />
         )}
