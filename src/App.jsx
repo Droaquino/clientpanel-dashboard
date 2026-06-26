@@ -102,6 +102,7 @@ function senhaFromTel(tel) {
 
 // ─── CadastroScreen ───────────────────────────────────────────
 function CadastroScreen({ onBack, inviteToken }) {
+  const { theme } = useTheme()
   const [inviteData, setInviteData] = useState(null)
   const lockedRole = inviteData?.role || null
 
@@ -266,6 +267,7 @@ function CadastroScreen({ onBack, inviteToken }) {
 }
 
 function LoginScreen({ onLogin, onCadastro }) {
+  const { theme } = useTheme()
   const [section,     setSection    ] = useState('gestao')
   const [userId,      setUserId     ] = useState('')
   const [clientEmail, setClientEmail] = useState('')
