@@ -1077,6 +1077,7 @@ function Configuracoes({ colaboradores, consultores, areas, onColabAdd, onColabU
 
 // ─── Calendar nav bar ─────────────────────────────────────────
 function CalNavBar({ label, onPrev, onNext, onToday, mode, setMode }) {
+  const { theme } = useTheme()
   return (
     <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:'1rem', flexWrap:'wrap' }}>
       <button onClick={onToday} style={{ fontSize:11, padding:'5px 12px', border:`0.5px solid ${BRAND_BRD}`, borderRadius:7, cursor:'pointer', background:BRAND_LIGHT, color:BRAND, fontWeight:500 }}>Hoje</button>
@@ -1101,6 +1102,7 @@ function CalNavBar({ label, onPrev, onNext, onToday, mode, setMode }) {
 
 // ─── Day view ─────────────────────────────────────────────────
 function AgendaDia({ user, meetings, viewDate, onToggle, onEdit, onNew, onUpdate }) {
+  const { theme } = useTheme()
   const ymd    = toYMD(viewDate)
   const evs    = meetings.filter(m => m.date===ymd)
   const totalH = HOURS.length * HOUR_H
@@ -1162,6 +1164,7 @@ function AgendaDia({ user, meetings, viewDate, onToggle, onEdit, onNew, onUpdate
 
 // ─── Week view ────────────────────────────────────────────────
 function AgendaSemana({ user, meetings, viewDate, onToggle, onEdit, onNew, onUpdate }) {
+  const { theme } = useTheme()
   const mon    = weekMon(viewDate)
   const cols   = Array.from({ length:5 }, (_, i) => addDays(mon, i))
   const totalH = HOURS.length * HOUR_H
@@ -1223,6 +1226,7 @@ function AgendaSemana({ user, meetings, viewDate, onToggle, onEdit, onNew, onUpd
 
 // ─── Month view ───────────────────────────────────────────────
 function AgendaMes({ user, meetings, viewDate, onToggle, onDrillDay, onUpdate }) {
+  const { theme } = useTheme()
   const cells = monthGrid(viewDate)
   const today = new Date()
   return (
@@ -1260,6 +1264,7 @@ function AgendaMes({ user, meetings, viewDate, onToggle, onDrillDay, onUpdate })
 
 // ─── Year view ────────────────────────────────────────────────
 function AgendaAno({ user, meetings, viewDate, onToggle, onDrillMonth, onUpdate }) {
+  const { theme } = useTheme()
   const year  = viewDate.getFullYear()
   const today = new Date()
   return (
@@ -1564,6 +1569,7 @@ function DashboardSocio({ processes, areas, colaboradores, consultores }) {
 }
 
 function Dashboard({ meetings, processes }) {
+  const { theme } = useTheme()
   const today    = new Date(); today.setHours(12,0,0,0)
   const todayYMD = toYMD(today)
   const upcoming = meetings.filter(m => !m.canceled && m.date >= todayYMD).sort((a,b) => a.date.localeCompare(b.date)||a.sh-b.sh).slice(0,5)
@@ -2003,6 +2009,7 @@ function ProcEditForm({ data, onChange, onSave, onCancel, isNew, consultores, co
 
 // ─── Delete Confirm ───────────────────────────────────────────
 function DeleteConfirm({ nome, onConfirm, onCancel }) {
+  const { theme } = useTheme()
   return (
     <div style={{ background:'#FCEBEB', border:'0.5px solid #F7C1C1', borderRadius:14, padding:'1rem 1.2rem', marginBottom:'.6rem', display:'flex', alignItems:'center', gap:12 }}>
       <span style={{ fontSize:13, color:'#791F1F', flex:1 }}>Excluir <strong>"{nome}"</strong>? Esta ação não pode ser desfeita.</span>
@@ -2068,6 +2075,7 @@ function ComentariosBox({ comentarios, onAdd, user, readonly }) {
 
 // ─── Process Card ─────────────────────────────────────────────
 function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting, colaboradores, user, onAddComment }) {
+  const { theme } = useTheme()
   const [scheduling,   setScheduling  ] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const role     = user?.role || 'cliente'
@@ -2160,6 +2168,7 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting, cola
 
 // ─── Processos tab ────────────────────────────────────────────
 function Processos({ processes, consultores, colaboradores, areas, onToggle, onConfirm, onAdd, onUpdate, onDelete, onAddMeeting, user, onAddComment }) {
+  const { theme } = useTheme()
   const [editingId, setEditingId]  = useState(null)
   const [editData,  setEditData]   = useState({})
   const [deletingId,setDeletingId] = useState(null)
@@ -2235,6 +2244,7 @@ function Processos({ processes, consultores, colaboradores, areas, onToggle, onC
 
 // ─── Levantamento tab ─────────────────────────────────────────
 function ColaboradoresTab({ colaboradores, onAdd, onUpdate, onDelete }) {
+  const { theme } = useTheme()
   return (
     <div>
       <div style={{ fontSize:26, fontWeight:700, color: theme === 'dark' ? '#f0f0f0' : '#111', marginBottom:'.2rem' }}>Colaboradores</div>
