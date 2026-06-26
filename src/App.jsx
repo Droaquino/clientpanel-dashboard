@@ -447,7 +447,7 @@ function Sidebar({ tab, setTab, user, onLogout }) {
   const [collapsed, setCollapsed] = useState(false)
   const role = user?.role || 'cliente'
   const allItems = [
-    { id:'dashboard',    icon: <Icon ic={BarChart2} />, label:'Dashboard',     roles:['coordenador','consultor'] },
+    { id:'dashboard',    icon: <Icon ic={BarChart2} />, label:'Dashboard',     roles:['coordenador','consultor','socio'] },
     { id:'agenda',       icon: <Icon ic={Calendar} />, label:'Agenda',         roles:['coordenador','consultor'] },
     { id:'levantamento', icon: <Icon ic={ClipboardList} />, label:'Levantamento',   roles:['coordenador','consultor'] },
     { id:'processos',    icon: <Icon ic={FolderOpen} />,  label:'Processos',      roles:['coordenador','consultor','socio','cliente'] },
