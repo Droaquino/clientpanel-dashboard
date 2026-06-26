@@ -162,7 +162,7 @@ function CadastroScreen({ onBack, inviteToken }) {
       <div style={{ background:'#fff', borderRadius:18, padding:'2rem', width:400, maxWidth:'95vw', textAlign:'center', boxShadow:'0 16px 60px rgba(0,0,0,.25)' }}>
         <div style={{ fontSize:40, marginBottom:12 }}><Icon ic={CheckCircle} size={40} style={{color: BRAND}} /></div>
         <div style={{ fontSize:16, fontWeight:600, color:BRAND, marginBottom:8 }}>Solicitação enviada!</div>
-        <div style={{ fontSize:13, color:'#555', marginBottom:'1.5rem' }}>Aguarde a aprovação do coordenador.</div>
+        <div style={{ fontSize:13, color: theme === 'dark' ? '#d0d0d0' : '#555', marginBottom:'1.5rem' }}>Aguarde a aprovação do coordenador.</div>
         <button onClick={onBack} style={{ fontSize:13, padding:'8px 20px', borderRadius:8, border:`0.5px solid ${BRAND}`, background:BRAND, color:'#fff', cursor:'pointer' }}>Voltar ao login</button>
       </div>
     </div>
@@ -172,10 +172,10 @@ function CadastroScreen({ onBack, inviteToken }) {
     <div style={{ minHeight:'100vh', background:`linear-gradient(135deg, ${BRAND} 0%, ${BRAND_MID} 100%)`, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}>
       <div style={{ background:'#fff', borderRadius:18, padding:'2rem', width:440, maxWidth:'95vw', maxHeight:'92vh', overflowY:'auto', boxShadow:'0 16px 60px rgba(0,0,0,.25)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:'1.5rem' }}>
-          <button onClick={onBack} style={{ border:'none', background:'none', fontSize:18, cursor:'pointer', color:'#999', lineHeight:1, padding:0 }}><Icon ic={ArrowLeft} size={18} /></button>
+          <button onClick={onBack} style={{ border:'none', background:'none', fontSize:18, cursor:'pointer', color: theme === 'dark' ? '#a0a0a0' : '#999', lineHeight:1, padding:0 }}><Icon ic={ArrowLeft} size={18} /></button>
           <div>
             <div style={{ fontSize:16, fontWeight:600, color:BRAND }}>Solicitar Cadastro</div>
-            <div style={{ fontSize:11, color:'#888' }}>Preencha os dados para solicitar acesso</div>
+            <div style={{ fontSize:11, color: theme === 'dark' ? '#b0b0b0' : '#888' }}>Preencha os dados para solicitar acesso</div>
           </div>
         </div>
 
@@ -324,7 +324,7 @@ function LoginScreen({ onLogin, onCadastro }) {
         <div style={{ textAlign:'center', marginBottom:'1.5rem' }}>
           <div style={{ width:52, height:52, borderRadius:14, background:BRAND, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, color:'#fff', margin:'0 auto 10px' }}><Icon ic={LayoutGrid} size={24} /></div>
           <div style={{ fontSize:17, fontWeight:600, color:BRAND }}>Painel de Controle</div>
-          <div style={{ fontSize:12, color:'#888', marginTop:2 }}>DF Turismo</div>
+          <div style={{ fontSize:12, color: theme === 'dark' ? '#b0b0b0' : '#888', marginTop:2 }}>DF Turismo</div>
         </div>
 
         {/* Section tabs */}
@@ -380,8 +380,8 @@ function LoginScreen({ onLogin, onCadastro }) {
           background: loading ? '#999' : BRAND, color:'#fff', border:'none', cursor: loading ? 'wait' : 'pointer',
         }}>{loading ? 'Verificando...' : 'Entrar'}</button>
 
-        <div style={{ textAlign:'center', marginTop:'1rem', paddingTop:'1rem', borderTop:'0.5px solid #eee' }}>
-          <span style={{ fontSize:11, color:'#888' }}>Não tem acesso? </span>
+        <div style={{ textAlign:'center', marginTop:'1rem', paddingTop:'1rem', borderTop: `0.5px solid ${theme === 'dark' ? '#222' : '#eee'}` }}>
+          <span style={{ fontSize:11, color: theme === 'dark' ? '#b0b0b0' : '#888' }}>Não tem acesso? </span>
           <button onClick={onCadastro} style={{ fontSize:11, color:BRAND_MID, background:'none', border:'none', cursor:'pointer', fontWeight:500, textDecoration:'underline', padding:0 }}>
             Solicitar cadastro
           </button>
@@ -460,8 +460,8 @@ const initProcesses = [
 ]
 
 // ─── Shared styles ────────────────────────────────────────────
-const inputSt = { width:'100%', padding:'7px 12px', fontSize:13, border:'0.5px solid #ccc', borderRadius:8, background:'linear-gradient(135deg, #fafbfa 0%, #f5f9f7 100%)', color:'#111', outline:'none' }
-const labelSt = { fontSize:12, color:'#666', marginBottom:4, display:'block', fontWeight:500 }
+const inputSt = (theme) => ({ width:'100%', padding:'7px 12px', fontSize:13, border: `0.5px solid ${theme === 'dark' ? '#444' : '#ccc'}`, borderRadius:8, background: theme === 'dark' ? '#1a1a1a' : 'linear-gradient(135deg, #fafbfa 0%, #f5f9f7 100%)', color: theme === 'dark' ? '#f0f0f0' : '#111', outline:'none' })
+const labelSt = (theme) => ({ fontSize:12, color: theme === 'dark' ? '#d0d0d0' : '#666', marginBottom:4, display:'block', fontWeight:500 })
 
 // Reusable button hover state
 const hoverBtnSt = (isHovered) => ({ transition:'all 0.2s ease', filter: isHovered ? 'brightness(0.90)' : 'brightness(1)' })
@@ -570,19 +570,20 @@ const emptyConsultor  = { nome:'', especialidade:'', telefone:'', email:'' }
 const emptyArea       = { nome:'', ativa:true }
 
 function PersonCard({ person, type, onEdit, onDelete }) {
+  const { theme } = useTheme()
   const initials = person.nome.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
   const avatarBg = type==='consultor' ? BRAND : '#6B7280'
   return (
-    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, padding:'1.5rem', display:'flex', gap:14, alignItems:'flex-start', boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', animation:'slideInUp 0.4s ease-out' }}>
+    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderTop:'3px solid #163828', borderRadius:14, padding:'1.5rem', display:'flex', gap:14, alignItems:'flex-start', boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', animation:'slideInUp 0.4s ease-out' }}>
       <div style={{ width:40, height:40, borderRadius:'50%', background:avatarBg, color:'#fff', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{initials}</div>
       <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ fontSize:13, fontWeight:500, color:'#111' }}>{person.nome}</div>
+        <div style={{ fontSize:13, fontWeight:500, color: theme === 'dark' ? '#f0f0f0' : '#111' }}>{person.nome}</div>
         <div style={{ fontSize:11, color: type==='consultor' ? BRAND_MID : '#888', marginTop:1 }}>
           {type==='consultor' ? person.especialidade : person.cargo}
         </div>
         <div style={{ display:'flex', gap:14, marginTop:6, flexWrap:'wrap' }}>
           {person.telefone && (
-            <a href={`tel:${person.telefone}`} style={{ fontSize:11, color:'#555', textDecoration:'none', display:'flex', alignItems:'center', gap:4 }}>
+            <a href={`tel:${person.telefone}`} style={{ fontSize:11, color: theme === 'dark' ? '#d0d0d0' : '#555', textDecoration:'none', display:'flex', alignItems:'center', gap:4 }}>
               <Icon ic={Phone} size={11} /> {person.telefone}
             </a>
           )}
@@ -594,7 +595,7 @@ function PersonCard({ person, type, onEdit, onDelete }) {
         </div>
       </div>
       <div style={{ display:'flex', gap:5, flexShrink:0 }}>
-        <button onClick={() => onEdit(person)} style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #d0d0d0', borderRadius:6, cursor:'pointer', background:'#fff', color:'#555' }}><Icon ic={Pencil} size={12} /></button>
+        <button onClick={() => onEdit(person)} style={{ fontSize:11, padding:'4px 9px', border: `0.5px solid ${theme === 'dark' ? '#444' : '#d0d0d0'}`, borderRadius:6, cursor:'pointer', background:'#fff', color: theme === 'dark' ? '#d0d0d0' : '#555' }}><Icon ic={Pencil} size={12} /></button>
         <button onClick={() => onDelete(person.id)} style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #f5c6c6', borderRadius:6, cursor:'pointer', background:'#fff', color:'#A32D2D' }}><Icon ic={Trash2} size={12} /></button>
       </div>
     </div>
@@ -602,16 +603,17 @@ function PersonCard({ person, type, onEdit, onDelete }) {
 }
 
 function AreaCard({ area, onEdit, onDelete }) {
+  const { theme } = useTheme()
   return (
-    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, padding:'1.5rem', display:'flex', gap:14, alignItems:'flex-start', boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', animation:'slideInUp 0.4s ease-out' }}>
+    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderTop:'3px solid #163828', borderRadius:14, padding:'1.5rem', display:'flex', gap:14, alignItems:'flex-start', boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', animation:'slideInUp 0.4s ease-out' }}>
       <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ fontSize:13, fontWeight:500, color:'#111' }}>{area.nome}</div>
-        <div style={{ fontSize:11, color:'#888', marginTop:2 }}>
+        <div style={{ fontSize:13, fontWeight:500, color: theme === 'dark' ? '#f0f0f0' : '#111' }}>{area.nome}</div>
+        <div style={{ fontSize:11, color: theme === 'dark' ? '#b0b0b0' : '#888', marginTop:2 }}>
           Status: <span style={{ fontWeight:500, color: area.ativa ? BRAND : '#888' }}>{area.ativa ? 'Ativa' : 'Inativa'}</span>
         </div>
       </div>
       <div style={{ display:'flex', gap:5, flexShrink:0 }}>
-        <button onClick={() => onEdit(area)} style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #d0d0d0', borderRadius:6, cursor:'pointer', background:'#fff', color:'#555' }}><Icon ic={Pencil} size={12} /></button>
+        <button onClick={() => onEdit(area)} style={{ fontSize:11, padding:'4px 9px', border: `0.5px solid ${theme === 'dark' ? '#444' : '#d0d0d0'}`, borderRadius:6, cursor:'pointer', background:'#fff', color: theme === 'dark' ? '#d0d0d0' : '#555' }}><Icon ic={Pencil} size={12} /></button>
         <button onClick={() => onDelete(area.id)} style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #f5c6c6', borderRadius:6, cursor:'pointer', background:'#fff', color:'#A32D2D' }}><Icon ic={Trash2} size={12} /></button>
       </div>
     </div>
@@ -619,14 +621,15 @@ function AreaCard({ area, onEdit, onDelete }) {
 }
 
 function AreaForm({ data, onChange, onSave, onCancel, isNew }) {
+  const { theme } = useTheme()
   const ok = (data.nome||'').trim()
   return (
-    <div style={{ background: isNew ? '#FAFCFA' : '#f8fbf9', border:`1.5px solid ${BRAND_BRD}`, borderTop:`3px solid ${BRAND}`, borderRadius:14, padding:'1.25rem 1.35rem', marginBottom:'.8rem', boxShadow:'0 2px 8px rgba(22, 56, 40, 0.08)' }}>
+    <div style={{ background: isNew ? (theme === 'dark' ? '#1a1a1a' : '#FAFCFA') : (theme === 'dark' ? '#1e1e1e' : '#f8fbf9'), border:`1.5px solid ${BRAND_BRD}`, borderTop:`3px solid ${BRAND}`, borderRadius:14, padding:'1.25rem 1.35rem', marginBottom:'.8rem', boxShadow:'0 2px 8px rgba(22, 56, 40, 0.08)' }}>
       <div style={{ fontSize:13, fontWeight:500, color:BRAND, marginBottom:'1rem' }}>{isNew ? <><Icon ic={Plus} size={12} /> Nova área</> : <><Icon ic={Pencil} size={12} /> Editando área</>}</div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginBottom:'1rem' }}>
         <div style={{ gridColumn:'1/-1' }}>
-          <label style={labelSt}>Nome da área <span style={{ color:'#E24B4A' }}>*</span></label>
-          <input style={inputSt} value={data.nome||''} placeholder="Ex: Comercial, RH, Financeiro"
+          <label style={labelSt(theme)}>Nome da área <span style={{ color:'#E24B4A' }}>*</span></label>
+          <input style={inputSt(theme)} value={data.nome||''} placeholder="Ex: Comercial, RH, Financeiro"
             onChange={e => onChange({ ...data, nome:e.target.value })} />
         </div>
         <div style={{ gridColumn:'1/-1' }}>
@@ -638,7 +641,7 @@ function AreaForm({ data, onChange, onSave, onCancel, isNew }) {
         </div>
       </div>
       <div style={{ display:'flex', gap:'0.85rem', justifyContent:'flex-end' }}>
-        <button onClick={onCancel} style={{ fontSize:12, padding:'7px 16px', border:`0.5px solid #d0d0d0`, borderRadius:8, cursor:'pointer', background:'#fff', color:'#555', fontWeight:500, transition:'all 0.2s ease' }} onMouseOver={e => { e.target.style.background = '#f5f5f5' }} onMouseOut={e => { e.target.style.background = '#fff' }}>Cancelar</button>
+        <button onClick={onCancel} style={{ fontSize:12, padding:'7px 16px', border:`0.5px solid #d0d0d0`, borderRadius:8, cursor:'pointer', background:'#fff', color: theme === 'dark' ? '#d0d0d0' : '#555', fontWeight:500, transition:'all 0.2s ease' }} onMouseOver={e => { e.target.style.background = '#f5f5f5' }} onMouseOut={e => { e.target.style.background = '#fff' }}>Cancelar</button>
         <button onClick={onSave} disabled={!ok} style={{ fontSize:12, padding:'7px 16px', borderRadius:8, cursor: ok ? 'pointer' : 'default', border:`0.5px solid ${ok ? BRAND : '#ddd'}`, background: ok ? BRAND : '#f0f0f0', color: ok ? '#fff' : '#ccc', fontWeight:600, boxShadow: ok ? '0 4px 15px rgba(22, 56, 40, 0.3)' : 'none', transition:'all 0.2s ease' }} onMouseOver={e => { if (ok) { e.target.style.filter = 'brightness(0.90)' } }} onMouseOut={e => { e.target.style.filter = 'brightness(1)' }}>Salvar</button>
       </div>
     </div>
@@ -646,6 +649,7 @@ function AreaForm({ data, onChange, onSave, onCancel, isNew }) {
 }
 
 function PersonForm({ data, onChange, onSave, onCancel, type, isNew }) {
+  const { theme } = useTheme()
   const [criarLogin, setCriarLogin] = useState(false)
   const [loginRole,  setLoginRole ] = useState(type === 'consultor' ? 'consultor' : 'cliente')
   const [loginSenha, setLoginSenha] = useState('')
@@ -677,13 +681,13 @@ function PersonForm({ data, onChange, onSave, onCancel, type, isNew }) {
   }
 
   return (
-    <div style={{ background: isNew ? '#FAFCFA' : '#f8fbf9', border:`1.5px solid ${BRAND_BRD}`, borderTop:`3px solid ${BRAND}`, borderRadius:14, padding:'1.25rem 1.35rem', marginBottom:'.8rem', boxShadow:'0 2px 8px rgba(22, 56, 40, 0.08)' }}>
+    <div style={{ background: isNew ? (theme === 'dark' ? '#1a1a1a' : '#FAFCFA') : (theme === 'dark' ? '#1e1e1e' : '#f8fbf9'), border:`1.5px solid ${BRAND_BRD}`, borderTop:`3px solid ${BRAND}`, borderRadius:14, padding:'1.25rem 1.35rem', marginBottom:'.8rem', boxShadow:'0 2px 8px rgba(22, 56, 40, 0.08)' }}>
       <div style={{ fontSize:13, fontWeight:500, color:BRAND, marginBottom:'1rem' }}>{isNew ? <><Icon ic={Plus} size={12} /> Novo registro</> : <><Icon ic={Pencil} size={12} /> Editando registro</>}</div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginBottom:'1rem' }}>
         {fields.map(f => (
           <div key={f.key} style={{ gridColumn: f.span===2 ? '1/-1' : 'auto' }}>
-            <label style={labelSt}>{f.label} {f.key==='nome' && <span style={{ color:'#E24B4A' }}>*</span>}</label>
-            <input style={inputSt} value={data[f.key]||''} placeholder={f.placeholder}
+            <label style={labelSt(theme)}>{f.label} {f.key==='nome' && <span style={{ color:'#E24B4A' }}>*</span>}</label>
+            <input style={inputSt(theme)} value={data[f.key]||''} placeholder={f.placeholder}
               onChange={e => onChange({ ...data, [f.key]:e.target.value })} />
           </div>
         ))}
@@ -700,9 +704,9 @@ function PersonForm({ data, onChange, onSave, onCancel, type, isNew }) {
           {criarLogin && (
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginTop:'.75rem' }}>
               <div>
-                <label style={labelSt}>Nível de acesso</label>
+                <label style={labelSt(theme)}>Nível de acesso</label>
                 <select value={loginRole} onChange={e => setLoginRole(e.target.value)}
-                  style={{ ...inputSt, cursor:'pointer' }}>
+                  style={{ ...inputSt(theme), cursor:'pointer' }}>
                   {type === 'consultor' && <option value="consultor">Consultor</option>}
                   {type === 'consultor' && <option value="coordenador">Coordenador</option>}
                   {type !== 'consultor' && <option value="cliente">Cliente (somente leitura)</option>}
@@ -710,11 +714,11 @@ function PersonForm({ data, onChange, onSave, onCancel, type, isNew }) {
                 </select>
               </div>
               <div>
-                <label style={labelSt}>Senha de acesso</label>
-                <input style={inputSt} value={loginSenha} placeholder="Senha"
+                <label style={labelSt(theme)}>Senha de acesso</label>
+                <input style={inputSt(theme)} value={loginSenha} placeholder="Senha"
                   onChange={e => setLoginSenha(e.target.value)} />
                 {(data.telefone||'').replace(/\D/g,'').length >= 4 && (
-                  <div style={{ fontSize:10, color:'#888', marginTop:3 }}>
+                  <div style={{ fontSize:10, color: theme === 'dark' ? '#b0b0b0' : '#888', marginTop:3 }}>
                     Pré-preenchida com os 4 primeiros dígitos do telefone
                   </div>
                 )}
@@ -725,7 +729,7 @@ function PersonForm({ data, onChange, onSave, onCancel, type, isNew }) {
       )}
 
       <div style={{ display:'flex', gap:9, justifyContent:'flex-end' }}>
-        <button onClick={onCancel} style={{ fontSize:12, padding:'7px 16px', border:'0.5px solid #ccc', borderRadius:8, cursor:'pointer', background:'#fff', color:'#666', fontWeight:500, transition:'all 0.2s ease' }} onMouseOver={e => { e.target.style.background = '#f5f5f5' }} onMouseOut={e => { e.target.style.background = '#fff' }}>Cancelar</button>
+        <button onClick={onCancel} style={{ fontSize:12, padding:'7px 16px', border: `0.5px solid ${theme === 'dark' ? '#444' : '#ccc'}`, borderRadius:8, cursor:'pointer', background:'#fff', color: theme === 'dark' ? '#d0d0d0' : '#666', fontWeight:500, transition:'all 0.2s ease' }} onMouseOver={e => { e.target.style.background = '#f5f5f5' }} onMouseOut={e => { e.target.style.background = '#fff' }}>Cancelar</button>
         <button onClick={handleSave} style={{
           fontSize:12, padding:'7px 18px', borderRadius:8, fontWeight:600,
           cursor: ok ? 'pointer' : 'not-allowed',
@@ -740,6 +744,7 @@ function PersonForm({ data, onChange, onSave, onCancel, type, isNew }) {
 }
 
 function PeopleSection({ title, subtitle, type, people, onAdd, onUpdate, onDelete, accentColor }) {
+  const { theme } = useTheme()
   const [showAdd,   setShowAdd]   = useState(false)
   const [addData,   setAddData]   = useState(type==='consultor' ? emptyConsultor : emptyColab)
   const [editingId, setEditingId] = useState(null)
@@ -769,12 +774,12 @@ function PeopleSection({ title, subtitle, type, people, onAdd, onUpdate, onDelet
   }
 
   return (
-    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', overflow:'hidden', flex:1, minWidth:0 }}>
+    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderTop:'3px solid #163828', borderRadius:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', overflow:'hidden', flex:1, minWidth:0 }}>
       {/* Header */}
       <div style={{ padding:'1.25rem 1.5rem', background: accentColor+'1A', borderBottom:`0.5px solid ${accentColor}45`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
           <div style={{ fontSize:15, fontWeight:600, color: accentColor }}>{title}</div>
-          <div style={{ fontSize:11, color:'#888', marginTop:2 }}>{subtitle}</div>
+          <div style={{ fontSize:11, color: theme === 'dark' ? '#b0b0b0' : '#888', marginTop:2 }}>{subtitle}</div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           <span style={{ fontSize:11, fontWeight:700, color: accentColor, background: accentColor+'22', padding:'5px 14px', borderRadius:99 }}>{people.length}</span>
@@ -789,7 +794,7 @@ function PeopleSection({ title, subtitle, type, people, onAdd, onUpdate, onDelet
         {showAdd && <PersonForm data={addData} onChange={setAddData} onSave={saveAdd} onCancel={() => setShowAdd(false)} type={type} isNew />}
 
         {people.length === 0 && !showAdd && (
-          <div style={{ textAlign:'center', padding:'2rem', color:'#bbb', fontSize:12 }}>
+          <div style={{ textAlign:'center', padding:'2rem', color: theme === 'dark' ? '#909090' : '#bbb', fontSize:12 }}>
             Nenhum registro ainda. Clique em "<Icon ic={Plus} size={18} /> Novo" para começar.
           </div>
         )}
@@ -799,7 +804,7 @@ function PeopleSection({ title, subtitle, type, people, onAdd, onUpdate, onDelet
             if (deletingId===p.id) return (
               <div key={p.id} style={{ background:'#FCEBEB', border:'0.5px solid #F7C1C1', borderRadius:14, padding:'.9rem 1rem', display:'flex', alignItems:'center', gap:12 }}>
                 <span style={{ fontSize:12, color:'#791F1F', flex:1 }}>Remover <strong>"{p.nome}"</strong>?</span>
-                <button onClick={() => setDeletingId(null)} style={{ fontSize:11, padding:'5px 10px', border:'0.5px solid #ccc', borderRadius:6, cursor:'pointer', background:'#fff', color:'#666' }}>Cancelar</button>
+                <button onClick={() => setDeletingId(null)} style={{ fontSize:11, padding:'5px 10px', border: `0.5px solid ${theme === 'dark' ? '#444' : '#ccc'}`, borderRadius:6, cursor:'pointer', background:'#fff', color: theme === 'dark' ? '#d0d0d0' : '#666' }}>Cancelar</button>
                 <button onClick={() => confirmDel(p.id)} style={{ fontSize:11, padding:'5px 12px', border:'0.5px solid #A32D2D', borderRadius:6, cursor:'pointer', background:'#A32D2D', color:'#fff', fontWeight:500 }}><Icon ic={Trash2} size={11} /> Remover</button>
               </div>
             )
@@ -815,6 +820,7 @@ function PeopleSection({ title, subtitle, type, people, onAdd, onUpdate, onDelet
 }
 
 function AreasSection({ areas, onAdd, onUpdate, onDelete }) {
+  const { theme } = useTheme()
   const [showAdd,   setShowAdd]   = useState(false)
   const [addData,   setAddData]   = useState(emptyArea)
   const [editingId, setEditingId] = useState(null)
@@ -832,11 +838,11 @@ function AreasSection({ areas, onAdd, onUpdate, onDelete }) {
   }
 
   return (
-    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', overflow:'hidden', flex:1, minWidth:0 }}>
+    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderTop:'3px solid #163828', borderRadius:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', overflow:'hidden', flex:1, minWidth:0 }}>
       <div style={{ padding:'1.25rem 1.5rem', background: BRAND+'1A', borderBottom:`0.5px solid ${BRAND}45`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
           <div style={{ fontSize:15, fontWeight:600, color: BRAND }}>Áreas da Empresa</div>
-          <div style={{ fontSize:11, color:'#888', marginTop:2 }}>Configure as áreas para exibição nos processos</div>
+          <div style={{ fontSize:11, color: theme === 'dark' ? '#b0b0b0' : '#888', marginTop:2 }}>Configure as áreas para exibição nos processos</div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           <span style={{ fontSize:12, fontWeight:700, color: BRAND, background: BRAND+'22', padding:'5px 14px', borderRadius:99 }}>{areas.length}</span>
@@ -851,7 +857,7 @@ function AreasSection({ areas, onAdd, onUpdate, onDelete }) {
         {showAdd && <AreaForm data={addData} onChange={setAddData} onSave={saveAdd} onCancel={() => setShowAdd(false)} isNew />}
 
         {areas.length === 0 && !showAdd && (
-          <div style={{ textAlign:'center', padding:'2rem', color:'#bbb', fontSize:12 }}>
+          <div style={{ textAlign:'center', padding:'2rem', color: theme === 'dark' ? '#909090' : '#bbb', fontSize:12 }}>
             Nenhuma área configurada. Clique em "<Icon ic={Plus} size={18} /> Nova" para começar.
           </div>
         )}
@@ -861,7 +867,7 @@ function AreasSection({ areas, onAdd, onUpdate, onDelete }) {
             if (deletingId===a.id) return (
               <div key={a.id} style={{ background:'#FCEBEB', border:'0.5px solid #F7C1C1', borderRadius:14, padding:'.9rem 1rem', display:'flex', alignItems:'center', gap:12 }}>
                 <span style={{ fontSize:12, color:'#791F1F', flex:1 }}>Remover <strong>"{a.nome}"</strong>?</span>
-                <button onClick={() => setDeletingId(null)} style={{ fontSize:11, padding:'5px 10px', border:'0.5px solid #ccc', borderRadius:6, cursor:'pointer', background:'#fff', color:'#666' }}>Cancelar</button>
+                <button onClick={() => setDeletingId(null)} style={{ fontSize:11, padding:'5px 10px', border: `0.5px solid ${theme === 'dark' ? '#444' : '#ccc'}`, borderRadius:6, cursor:'pointer', background:'#fff', color: theme === 'dark' ? '#d0d0d0' : '#666' }}>Cancelar</button>
                 <button onClick={() => confirmDel(a.id)} style={{ fontSize:11, padding:'5px 12px', border:'0.5px solid #A32D2D', borderRadius:6, cursor:'pointer', background:'#A32D2D', color:'#fff', fontWeight:500 }}><Icon ic={Trash2} size={11} /> Remover</button>
               </div>
             )
@@ -877,6 +883,7 @@ function AreasSection({ areas, onAdd, onUpdate, onDelete }) {
 }
 
 function SolicitacoesPendentes() {
+  const { theme } = useTheme()
   const [list, setList] = useState([])
 
   async function refresh() {
@@ -904,11 +911,11 @@ function SolicitacoesPendentes() {
   const outros    = list.filter(x => x.status !== 'pendente')
 
   return (
-    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', overflow:'hidden', marginBottom:'1.5rem' }}>
+    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderTop:'3px solid #163828', borderRadius:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', overflow:'hidden', marginBottom:'1.5rem' }}>
       <div style={{ padding:'1.25rem 1.5rem', background:ACCENT_LT, borderBottom:`0.5px solid ${ACCENT}45`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
           <div style={{ fontSize:16, fontWeight:700, color:'#7A5F10' }}>Solicitações Pendentes</div>
-          <div style={{ fontSize:11, color:'#888', marginTop:2 }}>Aprovar ou rejeitar novos cadastros</div>
+          <div style={{ fontSize:11, color: theme === 'dark' ? '#b0b0b0' : '#888', marginTop:2 }}>Aprovar ou rejeitar novos cadastros</div>
         </div>
         {pendentes.length > 0 && (
           <span style={{ fontSize:12, fontWeight:700, color:'#fff', background:'#E24B4A', padding:'5px 14px', borderRadius:99, boxShadow:'0 4px 15px rgba(226, 75, 74, 0.4)' }}>{pendentes.length}</span>
@@ -916,21 +923,21 @@ function SolicitacoesPendentes() {
       </div>
       <div style={{ padding:'1.25rem' }}>
         {pendentes.length === 0 && outros.length === 0 && (
-          <div style={{ textAlign:'center', padding:'1.5rem', fontSize:12, color:'#bbb' }}>Nenhuma solicitação ainda.</div>
+          <div style={{ textAlign:'center', padding:'1.5rem', fontSize:12, color: theme === 'dark' ? '#909090' : '#bbb' }}>Nenhuma solicitação ainda.</div>
         )}
         {pendentes.map(item => (
           <div key={item.id} style={{ background:'#FAFCFA', border:`0.5px solid ${BRAND_BRD}`, borderRadius:10, padding:'.85rem 1rem', marginBottom:'.6rem' }}>
             <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:13, fontWeight:500, color:'#111' }}>{item.nome}</div>
-                <div style={{ fontSize:11, color:'#555', marginTop:2 }}>{item.email} · {item.telefone}</div>
+                <div style={{ fontSize:13, fontWeight:500, color: theme === 'dark' ? '#f0f0f0' : '#111' }}>{item.nome}</div>
+                <div style={{ fontSize:11, color: theme === 'dark' ? '#d0d0d0' : '#555', marginTop:2 }}>{item.email} · {item.telefone}</div>
                 <div style={{ display:'flex', gap:6, marginTop:4, flexWrap:'wrap' }}>
                   <span style={{ fontSize:11, padding:'4px 12px', borderRadius:99, background:BRAND_LIGHT, color:BRAND_MID, fontWeight:600 }}>{item.grupo === 'gestao' ? 'Grupo Gestão' : 'Cliente'}</span>
-                  <span style={{ fontSize:11, padding:'4px 12px', borderRadius:99, background:'#f0f0f0', color:'#666', fontWeight:600 }}>{item.role}</span>
-                  {item.area && <span style={{ fontSize:11, padding:'4px 12px', borderRadius:99, background:'#f0f0f0', color:'#666', fontWeight:600 }}>Área: {item.area}</span>}
-                  {item.cargo && item.grupo === 'cliente' && item.role === 'colaborador' && <span style={{ fontSize:11, padding:'4px 12px', borderRadius:99, background:'#f0f0f0', color:'#666', fontWeight:600 }}>{item.cargo}</span>}
+                  <span style={{ fontSize:11, padding:'4px 12px', borderRadius:99, background:'#f0f0f0', color: theme === 'dark' ? '#d0d0d0' : '#666', fontWeight:600 }}>{item.role}</span>
+                  {item.area && <span style={{ fontSize:11, padding:'4px 12px', borderRadius:99, background:'#f0f0f0', color: theme === 'dark' ? '#d0d0d0' : '#666', fontWeight:600 }}>Área: {item.area}</span>}
+                  {item.cargo && item.grupo === 'cliente' && item.role === 'colaborador' && <span style={{ fontSize:11, padding:'4px 12px', borderRadius:99, background:'#f0f0f0', color: theme === 'dark' ? '#d0d0d0' : '#666', fontWeight:600 }}>{item.cargo}</span>}
                 </div>
-                <div style={{ fontSize:10, color:'#bbb', marginTop:3 }}>{new Date(item.created_at || item.dataSolicitacao).toLocaleString('pt-BR')}</div>
+                <div style={{ fontSize:10, color: theme === 'dark' ? '#909090' : '#bbb', marginTop:3 }}>{new Date(item.created_at || item.dataSolicitacao).toLocaleString('pt-BR')}</div>
               </div>
               <div style={{ display:'flex', gap:6, flexShrink:0 }}>
                 <button onClick={() => aprovar(item)} style={{ fontSize:11, padding:'5px 11px', border:`0.5px solid ${BRAND_MID}`, borderRadius:7, cursor:'pointer', background:BRAND_LIGHT, color:BRAND, fontWeight:500 }}><Icon ic={CheckCircle} size={12} /> Aprovar</button>
@@ -941,11 +948,11 @@ function SolicitacoesPendentes() {
         ))}
         {outros.length > 0 && (
           <div style={{ marginTop:8 }}>
-            <div style={{ fontSize:11, color:'#bbb', marginBottom:6 }}>Histórico</div>
+            <div style={{ fontSize:11, color: theme === 'dark' ? '#909090' : '#bbb', marginBottom:6 }}>Histórico</div>
             {outros.map(item => (
-              <div key={item.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'.6rem .9rem', background:'#fafafa', borderRadius:8, marginBottom:4, opacity:.7 }}>
+              <div key={item.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'.6rem .9rem', background: theme === 'dark' ? '#1a1a1a' : '#fafafa', borderRadius:8, marginBottom:4, opacity:.7 }}>
                 <span style={{ fontSize:18 }}>{item.status === 'aprovado' ? <Icon ic={CheckCircle} size={18} style={{color:BRAND_MID}} /> : <Icon ic={XCircle} size={18} style={{color:'#A32D2D'}} />}</span>
-                <div style={{ flex:1, fontSize:11, color:'#555' }}>{item.nome} — {item.email}</div>
+                <div style={{ flex:1, fontSize:11, color: theme === 'dark' ? '#d0d0d0' : '#555' }}>{item.nome} — {item.email}</div>
                 <span style={{ fontSize:11, padding:'4px 12px', borderRadius:99, background: item.status==='aprovado' ? BRAND_LIGHT : '#FCEBEB', color: item.status==='aprovado' ? BRAND_MID : '#A32D2D', fontWeight:600 }}>{item.status}</span>
               </div>
             ))}
@@ -957,6 +964,7 @@ function SolicitacoesPendentes() {
 }
 
 function GerarConvites() {
+  const { theme } = useTheme()
   const [roleInv, setRoleInv] = useState('consultor')
   const [invites, setInvitesState] = useState([])
   const [copied, setCopied] = useState(null)
@@ -979,18 +987,18 @@ function GerarConvites() {
   }
 
   return (
-    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', overflow:'hidden', marginBottom:'1.5rem' }}>
+    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderTop:'3px solid #163828', borderRadius:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', overflow:'hidden', marginBottom:'1.5rem' }}>
       <div style={{ padding:'1.25rem 1.5rem', background:BRAND_LIGHT, borderBottom:`0.5px solid ${BRAND_BRD}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
           <div style={{ fontSize:16, fontWeight:700, color:BRAND }}>Gerar Link de Convite</div>
-          <div style={{ fontSize:11, color:'#888', marginTop:2 }}>Convide usuários com perfil pré-definido</div>
+          <div style={{ fontSize:11, color: theme === 'dark' ? '#b0b0b0' : '#888', marginTop:2 }}>Convide usuários com perfil pré-definido</div>
         </div>
       </div>
       <div style={{ padding:'1.25rem' }}>
         <div style={{ display:'flex', gap:9, marginBottom:'1.25rem', alignItems:'flex-end' }}>
           <div style={{ flex:1 }}>
-            <label style={labelSt}>Função do convidado</label>
-            <select style={{ ...inputSt, cursor:'pointer' }} value={roleInv} onChange={e => setRoleInv(e.target.value)}>
+            <label style={labelSt(theme)}>Função do convidado</label>
+            <select style={{ ...inputSt(theme), cursor:'pointer' }} value={roleInv} onChange={e => setRoleInv(e.target.value)}>
               <option value="consultor">Consultor</option>
               <option value="socio">Sócio</option>
               <option value="colaborador">Colaborador</option>
@@ -1002,18 +1010,18 @@ function GerarConvites() {
         </div>
 
         {invites.length === 0 && (
-          <div style={{ textAlign:'center', padding:'1rem', fontSize:12, color:'#bbb' }}>Nenhum convite gerado ainda.</div>
+          <div style={{ textAlign:'center', padding:'1rem', fontSize:12, color: theme === 'dark' ? '#909090' : '#bbb' }}>Nenhum convite gerado ainda.</div>
         )}
         {invites.map(inv => {
           const url = `${BASE_URL}?invite=${inv.token}`
           return (
-            <div key={inv.token} style={{ display:'flex', alignItems:'center', gap:8, padding:'.7rem .9rem', background:'#fafafa', border:'0.5px solid #e2e8e4', borderRadius:9, marginBottom:6 }}>
+            <div key={inv.token} style={{ display:'flex', alignItems:'center', gap:8, padding:'.7rem .9rem', background: theme === 'dark' ? '#1a1a1a' : '#fafafa', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderRadius:9, marginBottom:6 }}>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
                   <span style={{ fontSize:11, padding:'4px 12px', borderRadius:99, background:BRAND_LIGHT, color:BRAND_MID, fontWeight:600 }}>{inv.role}</span>
                   <span style={{ fontSize:11, padding:'4px 12px', borderRadius:99, background: inv.status==='usado' ? '#f0f0f0' : '#EBF4EF', color: inv.status==='usado' ? '#888' : BRAND_MID, fontWeight:600 }}>{inv.status}</span>
                 </div>
-                <div style={{ fontSize:10, color:'#888', fontFamily:'monospace', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{url}</div>
+                <div style={{ fontSize:10, color: theme === 'dark' ? '#b0b0b0' : '#888', fontFamily:'monospace', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{url}</div>
               </div>
               <button onClick={() => copyLink(inv.token)} style={{ fontSize:11, padding:'5px 10px', border:`0.5px solid ${BRAND_BRD}`, borderRadius:7, cursor:'pointer', background: copied===inv.token ? BRAND_LIGHT : '#fff', color: copied===inv.token ? BRAND : '#555', whiteSpace:'nowrap', flexShrink:0 }}>
                 {copied===inv.token ? <><Icon ic={Check} size={12} /> Copiado</> : <><Icon ic={ClipboardList} size={12} /> Copiar</>}
@@ -1027,11 +1035,12 @@ function GerarConvites() {
 }
 
 function Configuracoes({ colaboradores, consultores, areas, onColabAdd, onColabUpdate, onColabDelete, onConsultorAdd, onConsultorUpdate, onConsultorDelete, onAreaAdd, onAreaUpdate, onAreaDelete, user }) {
+  const { theme } = useTheme()
   const isCoord = user?.role === 'coordenador'
   return (
     <div>
-      <div style={{ fontSize:28, fontWeight:800, color:'#111', marginBottom:'.3rem' }}>Configurações</div>
-      <div style={{ fontSize:13, color:'#999', marginBottom:'1.5rem' }}>Gerencie os participantes e consultores do projeto DF Turismo</div>
+      <div style={{ fontSize:28, fontWeight:800, color: theme === 'dark' ? '#f0f0f0' : '#111', marginBottom:'.3rem' }}>Configurações</div>
+      <div style={{ fontSize:13, color: theme === 'dark' ? '#a0a0a0' : '#999', marginBottom:'1.5rem' }}>Gerencie os participantes e consultores do projeto DF Turismo</div>
 
       {isCoord && <SolicitacoesPendentes />}
       {isCoord && <GerarConvites />}
@@ -1070,11 +1079,11 @@ function CalNavBar({ label, onPrev, onNext, onToday, mode, setMode }) {
     <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:'1rem', flexWrap:'wrap' }}>
       <button onClick={onToday} style={{ fontSize:11, padding:'5px 12px', border:`0.5px solid ${BRAND_BRD}`, borderRadius:7, cursor:'pointer', background:BRAND_LIGHT, color:BRAND, fontWeight:500 }}>Hoje</button>
       <div style={{ display:'flex', alignItems:'center', gap:2 }}>
-        <button onClick={onPrev} style={{ width:28, height:28, border:'0.5px solid #ddd', borderRadius:6, cursor:'pointer', background:'#fff', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center', color:'#555' }}>‹</button>
-        <button onClick={onNext} style={{ width:28, height:28, border:'0.5px solid #ddd', borderRadius:6, cursor:'pointer', background:'#fff', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center', color:'#555' }}>›</button>
+        <button onClick={onPrev} style={{ width:28, height:28, border: `0.5px solid ${theme === 'dark' ? '#333' : '#ddd'}`, borderRadius:6, cursor:'pointer', background:'#fff', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center', color: theme === 'dark' ? '#d0d0d0' : '#555' }}>‹</button>
+        <button onClick={onNext} style={{ width:28, height:28, border: `0.5px solid ${theme === 'dark' ? '#333' : '#ddd'}`, borderRadius:6, cursor:'pointer', background:'#fff', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center', color: theme === 'dark' ? '#d0d0d0' : '#555' }}>›</button>
       </div>
-      <span style={{ fontSize:15, fontWeight:500, color:'#111', flex:1 }}>{label}</span>
-      <div style={{ display:'flex', border:'0.5px solid #ddd', borderRadius:8, overflow:'hidden' }}>
+      <span style={{ fontSize:15, fontWeight:500, color: theme === 'dark' ? '#f0f0f0' : '#111', flex:1 }}>{label}</span>
+      <div style={{ display:'flex', border: `0.5px solid ${theme === 'dark' ? '#333' : '#ddd'}`, borderRadius:8, overflow:'hidden' }}>
         {['dia','semana','mês','ano'].map(m => (
           <button key={m} onClick={() => setMode(m)} style={{
             fontSize:11, padding:'5px 11px', cursor:'pointer', border:'none',
@@ -1094,16 +1103,16 @@ function AgendaDia({ user, meetings, viewDate, onToggle, onEdit, onNew, onUpdate
   const evs    = meetings.filter(m => m.date===ymd)
   const totalH = HOURS.length * HOUR_H
   return (
-    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, boxShadow:'0 1px 3px rgba(0,0,0,0.05)', overflow:'hidden' }}>
-      <div style={{ padding:'.65rem 1rem', background:BRAND_LIGHT, borderBottom:'0.5px solid #e2e8e4', fontSize:13, fontWeight:500, color:BRAND }}>
+    <div style={{ background:'#fff', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderRadius:14, boxShadow:'0 1px 3px rgba(0,0,0,0.05)', overflow:'hidden' }}>
+      <div style={{ padding:'.65rem 1rem', background:BRAND_LIGHT, borderBottom: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, fontSize:13, fontWeight:500, color:BRAND }}>
         {DAY_PT[viewDate.getDay()]} — {viewDate.getDate()} de {MONTH_PT[viewDate.getMonth()]} de {viewDate.getFullYear()}
-        {evs.length===0 && <span style={{ fontSize:11, color:'#aaa', fontWeight:400, marginLeft:12 }}>Nenhuma reunião agendada</span>}
+        {evs.length===0 && <span style={{ fontSize:11, color: theme === 'dark' ? '#909090' : '#aaa', fontWeight:400, marginLeft:12 }}>Nenhuma reunião agendada</span>}
       </div>
       <div style={{ display:'flex', overflowY:'auto', maxHeight:560 }}>
         <div style={{ width:52, flexShrink:0, position:'relative', height:totalH }}>
-          {HOURS.map(h => <div key={h} style={{ position:'absolute', top:(h-DAY_START)*HOUR_H-8, right:8, fontSize:10, color:'#bbb' }}>{p2(h)}:00</div>)}
+          {HOURS.map(h => <div key={h} style={{ position:'absolute', top:(h-DAY_START)*HOUR_H-8, right:8, fontSize:10, color: theme === 'dark' ? '#909090' : '#bbb' }}>{p2(h)}:00</div>)}
         </div>
-        <div style={{ flex:1, position:'relative', height:totalH, borderLeft:'0.5px solid #eee' }}>
+        <div style={{ flex:1, position:'relative', height:totalH, borderLeft: `0.5px solid ${theme === 'dark' ? '#222' : '#eee'}` }}>
           {HOURS.map(h => <div key={h} style={{ position:'absolute', top:(h-DAY_START)*HOUR_H, left:0, right:0, borderTop:'0.5px solid #f0f0f0', height:HOUR_H }} />)}
           {evs.map(m => {
             const c   = EV_COLORS[(m.ci??0)%5]
@@ -1156,14 +1165,14 @@ function AgendaSemana({ user, meetings, viewDate, onToggle, onEdit, onNew, onUpd
   const totalH = HOURS.length * HOUR_H
   const today  = new Date()
   return (
-    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, boxShadow:'0 1px 3px rgba(0,0,0,0.05)', overflow:'hidden' }}>
-      <div style={{ display:'flex', borderBottom:'0.5px solid #e2e8e4' }}>
+    <div style={{ background:'#fff', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderRadius:14, boxShadow:'0 1px 3px rgba(0,0,0,0.05)', overflow:'hidden' }}>
+      <div style={{ display:'flex', borderBottom: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}` }}>
         <div style={{ width:52, flexShrink:0 }} />
         {cols.map((col, i) => {
           const isToday = sameDay(col, today)
           return (
             <div key={i} style={{ flex:1, padding:'.55rem .5rem', textAlign:'center', borderLeft:'0.5px solid #e2e8e4', background: isToday ? BRAND_LIGHT : 'transparent' }}>
-              <div style={{ fontSize:10, color:'#888' }}>{DAY_PT[col.getDay()]}</div>
+              <div style={{ fontSize:10, color: theme === 'dark' ? '#b0b0b0' : '#888' }}>{DAY_PT[col.getDay()]}</div>
               <div style={{ width:26, height:26, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'3px auto 0', fontSize:14, fontWeight: isToday ? 600 : 400, background: isToday ? BRAND : 'transparent', color: isToday ? '#fff' : '#111' }}>{col.getDate()}</div>
             </div>
           )
@@ -1172,7 +1181,7 @@ function AgendaSemana({ user, meetings, viewDate, onToggle, onEdit, onNew, onUpd
       <div style={{ overflowY:'auto', maxHeight:520 }}>
         <div style={{ display:'flex', position:'relative' }}>
           <div style={{ width:52, flexShrink:0, position:'relative', height:totalH }}>
-            {HOURS.map(h => <div key={h} style={{ position:'absolute', top:(h-DAY_START)*HOUR_H-8, right:8, fontSize:10, color:'#bbb' }}>{p2(h)}:00</div>)}
+            {HOURS.map(h => <div key={h} style={{ position:'absolute', top:(h-DAY_START)*HOUR_H-8, right:8, fontSize:10, color: theme === 'dark' ? '#909090' : '#bbb' }}>{p2(h)}:00</div>)}
           </div>
           {cols.map((col, di) => {
             const ymd     = toYMD(col)
@@ -1205,7 +1214,7 @@ function AgendaSemana({ user, meetings, viewDate, onToggle, onEdit, onNew, onUpd
           })}
         </div>
       </div>
-      <div style={{ padding:'.4rem .8rem', borderTop:'0.5px solid #eee', fontSize:10, color:'#bbb' }}>Clique em um evento para editar</div>
+      <div style={{ padding:'.4rem .8rem', borderTop: `0.5px solid ${theme === 'dark' ? '#222' : '#eee'}`, fontSize:10, color: theme === 'dark' ? '#909090' : '#bbb' }}>Clique em um evento para editar</div>
     </div>
   )
 }
@@ -1215,15 +1224,15 @@ function AgendaMes({ user, meetings, viewDate, onToggle, onDrillDay, onUpdate })
   const cells = monthGrid(viewDate)
   const today = new Date()
   return (
-    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, boxShadow:'0 1px 3px rgba(0,0,0,0.05)', overflow:'hidden' }}>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:'0.5px solid #eee' }}>
+    <div style={{ background:'#fff', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderRadius:14, boxShadow:'0 1px 3px rgba(0,0,0,0.05)', overflow:'hidden' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom: `0.5px solid ${theme === 'dark' ? '#222' : '#eee'}` }}>
         {['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(dl => (
-          <div key={dl} style={{ padding:'8px 0', textAlign:'center', fontSize:10, fontWeight:500, color:'#888' }}>{dl}</div>
+          <div key={dl} style={{ padding:'8px 0', textAlign:'center', fontSize:10, fontWeight:500, color: theme === 'dark' ? '#b0b0b0' : '#888' }}>{dl}</div>
         ))}
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)' }}>
         {cells.map((cell, i) => {
-          if (!cell) return <div key={i} style={{ minHeight:72, background:'#fafafa', borderRight:'0.5px solid #f0f0f0', borderBottom:'0.5px solid #f0f0f0' }} />
+          if (!cell) return <div key={i} style={{ minHeight:72, background: theme === 'dark' ? '#1a1a1a' : '#fafafa', borderRight:'0.5px solid #f0f0f0', borderBottom:'0.5px solid #f0f0f0' }} />
           const ymd     = toYMD(cell)
           const evs     = meetings.filter(m => m.date===ymd)
           const isToday = sameDay(cell, today)
@@ -1238,7 +1247,7 @@ function AgendaMes({ user, meetings, viewDate, onToggle, onDrillDay, onUpdate })
                   {m.title}
                 </div>
               ))}
-              {evs.length>2 && <div style={{ fontSize:9, color:'#888' }}>+{evs.length-2} mais</div>}
+              {evs.length>2 && <div style={{ fontSize:9, color: theme === 'dark' ? '#b0b0b0' : '#888' }}>+{evs.length-2} mais</div>}
             </div>
           )
         })}
@@ -1258,14 +1267,14 @@ function AgendaAno({ user, meetings, viewDate, onToggle, onDrillMonth, onUpdate 
         const cells   = monthGrid(anchor)
         const evCount = meetings.filter(m => { const dt=fromYMD(m.date); return dt.getFullYear()===year&&dt.getMonth()===mi }).length
         return (
-          <div key={mi} style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:10, padding:'10px 8px' }}>
+          <div key={mi} style={{ background:'#fff', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderRadius:10, padding:'10px 8px' }}>
             <div onClick={() => onDrillMonth(anchor)} style={{ fontSize:12, fontWeight:500, color:BRAND, marginBottom:6, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
               {MONTH_PT[mi].charAt(0).toUpperCase()+MONTH_PT[mi].slice(1)}
               {evCount>0 && <span style={{ fontSize:11, padding:'4px 12px', borderRadius:99, background:BRAND_LIGHT, color:BRAND_MID, fontWeight:600 }}>{evCount}</span>}
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:1 }}>
               {['S','T','Q','Q','S','S','D'].map((dl,i) => (
-                <div key={i} style={{ fontSize:7, color:'#bbb', textAlign:'center', paddingBottom:2 }}>{dl}</div>
+                <div key={i} style={{ fontSize:7, color: theme === 'dark' ? '#909090' : '#bbb', textAlign:'center', paddingBottom:2 }}>{dl}</div>
               ))}
               {cells.map((cell, ci) => {
                 if (!cell) return <div key={ci} />
@@ -1289,6 +1298,7 @@ function AgendaAno({ user, meetings, viewDate, onToggle, onDrillMonth, onUpdate 
 
 // ─── Agenda tab ───────────────────────────────────────────────
 function Agenda({ user, meetings, colaboradores, onAdd, onUpdate, onDelete, onToggle }) {
+  const { theme } = useTheme()
   const todayDt = new Date(); todayDt.setHours(12,0,0,0)
   const [viewDate,  setViewDate ] = useState(todayDt)
   const [mode,      setMode     ] = useState('semana')
@@ -1328,13 +1338,13 @@ function Agenda({ user, meetings, colaboradores, onAdd, onUpdate, onDelete, onTo
   return (
     <div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'.2rem' }}>
-        <div style={{ fontSize:28, fontWeight:800, color:'#111' }}>Agenda</div>
+        <div style={{ fontSize:28, fontWeight:800, color: theme === 'dark' ? '#f0f0f0' : '#111' }}>Agenda</div>
         <button onClick={() => openNew()} style={{
           fontSize:12, padding:'9px 18px', borderRadius:8, fontWeight:600, cursor:'pointer',
           border:`0.5px solid ${BRAND}`, background:BRAND, color:'#fff', boxShadow:`0 4px 15px ${BRAND}4d`, transition:'all 0.2s ease'
         }} onMouseOver={e => { e.target.style.filter = 'brightness(0.90)' }} onMouseOut={e => { e.target.style.filter = 'brightness(1)' }}><Icon ic={Plus} size={20} /> Novo evento</button>
       </div>
-      <div style={{ fontSize:13, color:'#999', marginBottom:'1.5rem' }}>
+      <div style={{ fontSize:13, color: theme === 'dark' ? '#a0a0a0' : '#999', marginBottom:'1.5rem' }}>
         {upcoming.length} reunião(ões) futura(s)
         {canceled.length>0 && <span style={{ marginLeft:10, color:'#A32D2D' }}>· {canceled.length} cancelada(s)</span>}
       </div>
@@ -1359,6 +1369,7 @@ function Agenda({ user, meetings, colaboradores, onAdd, onUpdate, onDelete, onTo
 
 // ─── Dashboard ────────────────────────────────────────────────
 function DashboardSocio({ processes, areas, colaboradores, consultores }) {
+  const { theme } = useTheme()
   const [selectedAreas, setSelectedAreas] = useState([])
   const [selectedStages, setSelectedStages] = useState([])
 
@@ -1560,8 +1571,8 @@ function Dashboard({ meetings, processes }) {
   const avgPct   = total ? Math.round(processes.map(getPct).reduce((a,b)=>a+b,0)/total) : 0
   return (
     <div>
-      <div style={{ fontSize:28, fontWeight:800, color:'#111', marginBottom:'.3rem' }}>Dashboard</div>
-      <div style={{ fontSize:13, color:'#999', marginBottom:'1.5rem' }}>Visão geral do projeto DF Turismo</div>
+      <div style={{ fontSize:28, fontWeight:800, color: theme === 'dark' ? '#f0f0f0' : '#111', marginBottom:'.3rem' }}>Dashboard</div>
+      <div style={{ fontSize:13, color: theme === 'dark' ? '#a0a0a0' : '#999', marginBottom:'1.5rem' }}>Visão geral do projeto DF Turismo</div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:'1rem', marginBottom:'1.5rem' }}>
         {[
           ['Sprint 04','Mapeamento Core',BRAND,'📌'],
@@ -1569,25 +1580,25 @@ function Dashboard({ meetings, processes }) {
           [`${meetings.filter(m=>!m.canceled).length}`,'Reuniões confirmadas','#2D8A6F',<><Icon ic={CheckCircle} size={40} /></>],
           [canceled.length||'0', canceled.length?`${canceled.length} cancelada(s)`:'Nenhuma cancelada', canceled.length?'#A32D2D':'#888',<><Icon ic={AlertTriangle} size={40} /></>],
         ].map(([val,lbl,clr,ico]) => (
-          <div key={lbl} style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, padding:'1.25rem', display:'flex', alignItems:'center', gap:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', animation:'slideInUp 0.4s ease-out' }}>
+          <div key={lbl} style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderTop:'3px solid #163828', borderRadius:14, padding:'1.25rem', display:'flex', alignItems:'center', gap:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', animation:'slideInUp 0.4s ease-out' }}>
             <span style={{ fontSize:40 }}>{ico}</span>
-            <div><div style={{ fontSize:22, fontWeight:700, color:clr }}>{val}</div><div style={{ fontSize:11, color:'#888', marginTop:3 }}>{lbl}</div></div>
+            <div><div style={{ fontSize:22, fontWeight:700, color:clr }}>{val}</div><div style={{ fontSize:11, color: theme === 'dark' ? '#b0b0b0' : '#888', marginTop:3 }}>{lbl}</div></div>
           </div>
         ))}
       </div>
-      <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, padding:'1.5rem', marginBottom:'1.5rem', boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)' }}>
+      <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderTop:'3px solid #163828', borderRadius:14, padding:'1.5rem', marginBottom:'1.5rem', boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)' }}>
         <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
-          <span style={{ fontSize:13, fontWeight:600, color:'#555' }}>Progresso geral dos processos</span>
+          <span style={{ fontSize:13, fontWeight:600, color: theme === 'dark' ? '#d0d0d0' : '#555' }}>Progresso geral dos processos</span>
           <span style={{ fontSize:14, fontWeight:700, color: avgPct>=70?BRAND_MID:ACCENT }}>{avgPct}%</span>
         </div>
-        <div style={{ height:10, background:'#eee', borderRadius:99, overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div style={{ height:10, background: theme === 'dark' ? '#222' : '#eee', borderRadius:99, overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,0.1)' }}>
           <div style={{ height:'100%', width:`${avgPct}%`, background: avgPct>=70?BRAND_MID:ACCENT, borderRadius:99, transition:'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }} />
         </div>
       </div>
-      <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', overflow:'hidden' }}>
-        <div style={{ padding:'1rem 1.25rem', borderBottom:'0.5px solid #eee', fontSize:14, fontWeight:700, color:'#111' }}>📅 Próximas reuniões</div>
+      <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderTop:'3px solid #163828', borderRadius:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', overflow:'hidden' }}>
+        <div style={{ padding:'1rem 1.25rem', borderBottom: `0.5px solid ${theme === 'dark' ? '#222' : '#eee'}`, fontSize:14, fontWeight:700, color: theme === 'dark' ? '#f0f0f0' : '#111' }}>📅 Próximas reuniões</div>
         {upcoming.length===0
-          ? <div style={{ padding:'2rem', textAlign:'center', fontSize:12, color:'#bbb' }}>Nenhuma reunião futura agendada</div>
+          ? <div style={{ padding:'2rem', textAlign:'center', fontSize:12, color: theme === 'dark' ? '#909090' : '#bbb' }}>Nenhuma reunião futura agendada</div>
           : upcoming.map(m => {
             const c  = EV_COLORS[(m.ci??0)%5]
             const dt = fromYMD(m.date)
@@ -1595,14 +1606,14 @@ function Dashboard({ meetings, processes }) {
             return (
               <div key={m.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'.65rem 1rem', borderBottom:'0.5px solid #f5f5f5' }}>
                 <div style={{ width:34, textAlign:'center', flexShrink:0 }}>
-                  <div style={{ fontSize:9, color:'#aaa' }}>{DAY_PT[dt.getDay()]}</div>
+                  <div style={{ fontSize:9, color: theme === 'dark' ? '#909090' : '#aaa' }}>{DAY_PT[dt.getDay()]}</div>
                   <div style={{ fontSize:16, fontWeight:600, color: isToday ? BRAND : '#333' }}>{dt.getDate()}</div>
-                  <div style={{ fontSize:9, color:'#aaa' }}>{MONTH_SH[dt.getMonth()]}</div>
+                  <div style={{ fontSize:9, color: theme === 'dark' ? '#909090' : '#aaa' }}>{MONTH_SH[dt.getMonth()]}</div>
                 </div>
                 <div style={{ width:3, height:36, borderRadius:2, background:c.brd, flexShrink:0 }} />
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:12, fontWeight:500, color:'#111', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{m.title}</div>
-                  <div style={{ fontSize:10, color:'#888' }}>{p2(m.sh)}:{p2(m.sm)} – {p2(m.eh)}:{p2(m.em)} · {m.who}</div>
+                  <div style={{ fontSize:12, fontWeight:500, color: theme === 'dark' ? '#f0f0f0' : '#111', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{m.title}</div>
+                  <div style={{ fontSize:10, color: theme === 'dark' ? '#b0b0b0' : '#888' }}>{p2(m.sh)}:{p2(m.sm)} – {p2(m.eh)}:{p2(m.em)} · {m.who}</div>
                   {m.meetLink && (
                     <a href={m.meetLink} target="_blank" rel="noopener noreferrer"
                       style={{ fontSize:10, color:'#1a73e8', textDecoration:'none', display:'inline-flex', alignItems:'center', gap:3, marginTop:2 }}>
@@ -1621,6 +1632,7 @@ function Dashboard({ meetings, processes }) {
 
 // ─── Event Form (create / edit from Agenda) ──────────────────
 function EventForm({ initial, colaboradores, onSave, onCancel, onDelete }) {
+  const { theme } = useTheme()
   const todayYMD = toYMD(new Date())
   const isEdit   = !!initial?.id
 
@@ -1671,7 +1683,7 @@ function EventForm({ initial, colaboradores, onSave, onCancel, onDelete }) {
       <div style={{ background:'#fff', borderRadius:14, padding:'1.25rem 1.5rem', width:420, maxWidth:'95vw', maxHeight:'90vh', overflowY:'auto', boxShadow:'0 8px 40px rgba(0,0,0,.18)' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem' }}>
           <div style={{ fontSize:14, fontWeight:600, color:BRAND }}>{isEdit ? <><Icon ic={Pencil} size={11} /> Editar evento</> : <><Icon ic={Plus} size={18} /> Novo evento</>}</div>
-          <button onClick={onCancel} style={{ border:'none', background:'none', fontSize:18, cursor:'pointer', color:'#999', lineHeight:1 }}>×</button>
+          <button onClick={onCancel} style={{ border:'none', background:'none', fontSize:18, cursor:'pointer', color: theme === 'dark' ? '#a0a0a0' : '#999', lineHeight:1 }}>×</button>
         </div>
 
         {success && (
@@ -1687,28 +1699,28 @@ function EventForm({ initial, colaboradores, onSave, onCancel, onDelete }) {
         )}
 
         <div style={{ marginBottom:8 }}>
-          <label style={labelSt}>Título do evento</label>
+          <label style={labelSt(theme)}>Título do evento</label>
           <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Reunião de Coleta | DF Turismo"
-            style={{ ...inputSt, padding:'6px 10px' }} />
+            style={{ ...inputSt(theme), padding:'6px 10px' }} />
         </div>
         <div style={{ marginBottom:8 }}>
-          <label style={labelSt}>Data {dayLabel && <span style={{ color:BRAND_MID, fontWeight:500 }}>· {dayLabel}</span>}</label>
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ ...inputSt, padding:'6px 10px' }} />
+          <label style={labelSt(theme)}>Data {dayLabel && <span style={{ color:BRAND_MID, fontWeight:500 }}>· {dayLabel}</span>}</label>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ ...inputSt(theme), padding:'6px 10px' }} />
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
           <div>
-            <label style={labelSt}>Início</label>
-            <input type="time" value={start} onChange={e => setStart(e.target.value)} style={{ ...inputSt, padding:'6px 10px' }} />
+            <label style={labelSt(theme)}>Início</label>
+            <input type="time" value={start} onChange={e => setStart(e.target.value)} style={{ ...inputSt(theme), padding:'6px 10px' }} />
           </div>
           <div>
-            <label style={labelSt}>Término</label>
+            <label style={labelSt(theme)}>Término</label>
             <input type="time" value={end} onChange={e => setEnd(e.target.value)}
-              style={{ ...inputSt, padding:'6px 10px', borderColor: !validTime&&end ? '#E24B4A':'#ccc' }} />
+              style={{ ...inputSt(theme), padding:'6px 10px', borderColor: !validTime&&end ? '#E24B4A': theme === 'dark' ? '#444' : '#ccc' }} />
             {!validTime && end && <div style={{ fontSize:9, color:'#E24B4A', marginTop:2 }}>Término após o início</div>}
           </div>
         </div>
         <div style={{ marginBottom:8 }}>
-          <label style={labelSt}>Consultores e Participantes</label>
+          <label style={labelSt(theme)}>Consultores e Participantes</label>
           <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:8, minHeight:28 }}>
             {participantes.map(p => (
               <div key={p} style={{ display:'flex', alignItems:'center', gap:5, padding:'4px 10px', background:BRAND_LIGHT, border:`0.5px solid ${BRAND_MID}`, borderRadius:99, fontSize:11, color:BRAND }}>
@@ -1717,20 +1729,20 @@ function EventForm({ initial, colaboradores, onSave, onCancel, onDelete }) {
               </div>
             ))}
           </div>
-          <select onChange={e => { if(e.target.value && !participantes.includes(e.target.value)) setParticipantes([...participantes, e.target.value]); e.target.value='' }} style={{ ...inputSt, cursor:'pointer', padding:'6px 10px' }}>
+          <select onChange={e => { if(e.target.value && !participantes.includes(e.target.value)) setParticipantes([...participantes, e.target.value]); e.target.value='' }} style={{ ...inputSt(theme), cursor:'pointer', padding:'6px 10px' }}>
             <option value="">+ Selecionar participante…</option>
             {colaboradores.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
           </select>
         </div>
         <div style={{ marginBottom:8 }}>
-          <label style={labelSt}>Descrição / Processo</label>
+          <label style={labelSt(theme)}>Descrição / Processo</label>
           <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Descrição opcional"
-            rows={2} style={{ ...inputSt, padding:'6px 10px', resize:'vertical', fontFamily:'inherit' }} />
+            rows={2} style={{ ...inputSt(theme), padding:'6px 10px', resize:'vertical', fontFamily:'inherit' }} />
         </div>
         <div style={{ marginBottom:14 }}>
-          <label style={labelSt}>Link do Meet (opcional)</label>
+          <label style={labelSt(theme)}>Link do Meet (opcional)</label>
           <input value={meetLink} onChange={e => setMeetLink(e.target.value)} placeholder="https://meet.google.com/..."
-            style={{ ...inputSt, padding:'6px 10px' }} />
+            style={{ ...inputSt(theme), padding:'6px 10px' }} />
         </div>
 
         <div style={{ display:'flex', gap:6, justifyContent:'space-between', alignItems:'center' }}>
@@ -1742,7 +1754,7 @@ function EventForm({ initial, colaboradores, onSave, onCancel, onDelete }) {
             )}
           </div>
           <div style={{ display:'flex', gap:6 }}>
-            <button onClick={onCancel} style={{ fontSize:11, padding:'5px 12px', border:'0.5px solid #ccc', borderRadius:6, cursor:'pointer', background:'#fff', color:'#666' }}>
+            <button onClick={onCancel} style={{ fontSize:11, padding:'5px 12px', border: `0.5px solid ${theme === 'dark' ? '#444' : '#ccc'}`, borderRadius:6, cursor:'pointer', background:'#fff', color: theme === 'dark' ? '#d0d0d0' : '#666' }}>
               {success ? 'Fechar' : 'Cancelar'}
             </button>
             {!success && (
@@ -1770,6 +1782,7 @@ function EventForm({ initial, colaboradores, onSave, onCancel, onDelete }) {
 
 // ─── Schedule form ────────────────────────────────────────────
 function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel }) {
+  const { theme } = useTheme()
   const todayYMD = toYMD(new Date())
   const [date,    setDate   ] = useState(todayYMD)
   const [start,   setStart  ] = useState('09:00')
@@ -1846,32 +1859,32 @@ function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel
       )}
 
       <div style={{ marginBottom:8 }}>
-        <label style={labelSt}>Data {dayLabel && <span style={{ color:BRAND_MID, fontWeight:500 }}>· {dayLabel}</span>}</label>
-        <input type="date" value={date} min={todayYMD} onChange={e => setDate(e.target.value)} style={{ ...inputSt, padding:'5px 8px' }} />
+        <label style={labelSt(theme)}>Data {dayLabel && <span style={{ color:BRAND_MID, fontWeight:500 }}>· {dayLabel}</span>}</label>
+        <input type="date" value={date} min={todayYMD} onChange={e => setDate(e.target.value)} style={{ ...inputSt(theme), padding:'5px 8px' }} />
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
         <div>
-          <label style={labelSt}>Início</label>
-          <input type="time" value={start} onChange={e => setStart(e.target.value)} style={{ ...inputSt, padding:'5px 8px' }} />
+          <label style={labelSt(theme)}>Início</label>
+          <input type="time" value={start} onChange={e => setStart(e.target.value)} style={{ ...inputSt(theme), padding:'5px 8px' }} />
         </div>
         <div>
-          <label style={labelSt}>Término</label>
+          <label style={labelSt(theme)}>Término</label>
           <input type="time" value={end} onChange={e => setEnd(e.target.value)}
-            style={{ ...inputSt, padding:'5px 8px', borderColor: !validTime&&end ? '#E24B4A' : '#ccc' }} />
+            style={{ ...inputSt(theme), padding:'5px 8px', borderColor: !validTime&&end ? '#E24B4A' : theme === 'dark' ? '#444' : '#ccc' }} />
           {!validTime && end && <div style={{ fontSize:9, color:'#E24B4A', marginTop:2 }}>Término após o início</div>}
         </div>
       </div>
       <div style={{ marginBottom:10 }}>
-        <label style={labelSt}>Participante</label>
+        <label style={labelSt(theme)}>Participante</label>
         <input list="colab-list" value={who} onChange={e => setWho(e.target.value)} placeholder="Nome do participante"
-          style={{ ...inputSt, padding:'5px 8px' }} />
+          style={{ ...inputSt(theme), padding:'5px 8px' }} />
         <datalist id="colab-list">
           {colaboradores.map(c => <option key={c.id} value={c.nome} />)}
         </datalist>
       </div>
       <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
         <button onClick={() => success ? onSave({ date, sh, sm, eh, em, who, meetLink: success.meetLink, eventLink: success.eventLink }) : onCancel()}
-          style={{ fontSize:11, padding:'5px 12px', border:'0.5px solid #ccc', borderRadius:6, cursor:'pointer', background:'#fff', color:'#666' }}>
+          style={{ fontSize:11, padding:'5px 12px', border: `0.5px solid ${theme === 'dark' ? '#444' : '#ccc'}`, borderRadius:6, cursor:'pointer', background:'#fff', color: theme === 'dark' ? '#d0d0d0' : '#666' }}>
           {success ? 'Fechar' : 'Cancelar'}
         </button>
         {!success && (
@@ -1940,43 +1953,44 @@ function ChipSelect({ values, onChange, options, allowFreeText, placeholder }) {
 
 // ─── Process Edit Form ────────────────────────────────────────
 function ProcEditForm({ data, onChange, onSave, onCancel, isNew, consultores, colaboradores, areas }) {
+  const { theme } = useTheme()
   const areaOpts     = areas.map(a => a.nome)
   const consultorOpts = consultores.map(c => c.nome)
   const colaborOpts   = colaboradores.map(c => c.nome)
   const ok = (data.nome||'').trim() && data.area?.length && data.comQuem?.length && data.consultor?.length
 
   return (
-    <div style={{ background: isNew ? '#FAFCFA' : '#f8fbf9', border:`1.5px solid ${BRAND_BRD}`, borderRadius:14, padding:'1.1rem 1.2rem', marginBottom:'.6rem' }}>
+    <div style={{ background: isNew ? (theme === 'dark' ? '#1a1a1a' : '#FAFCFA') : (theme === 'dark' ? '#1e1e1e' : '#f8fbf9'), border:`1.5px solid ${BRAND_BRD}`, borderRadius:14, padding:'1.1rem 1.2rem', marginBottom:'.6rem' }}>
       <div style={{ fontSize:13, fontWeight:500, color:BRAND, marginBottom:'1rem' }}>{isNew ? <><Icon ic={Plus} size={18} /> Novo processo</> : <><Icon ic={Pencil} size={11} /> Editando processo</>}</div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginBottom:'1rem' }}>
         <div style={{ gridColumn:'1/-1' }}>
-          <label style={labelSt}>Nome do processo <span style={{ color:'#E24B4A' }}>*</span></label>
-          <input style={inputSt} value={data.nome} placeholder="Ex: Gestão de Contratos" onChange={e => onChange({ ...data, nome:e.target.value })} />
+          <label style={labelSt(theme)}>Nome do processo <span style={{ color:'#E24B4A' }}>*</span></label>
+          <input style={inputSt(theme)} value={data.nome} placeholder="Ex: Gestão de Contratos" onChange={e => onChange({ ...data, nome:e.target.value })} />
         </div>
         <div>
-          <label style={labelSt}>Área(s) do processo <span style={{ color:'#E24B4A' }}>*</span></label>
+          <label style={labelSt(theme)}>Área(s) do processo <span style={{ color:'#E24B4A' }}>*</span></label>
           <ChipSelect values={data.area} onChange={v => onChange({ ...data, area:v })}
             options={areaOpts} allowFreeText={false} placeholder="Selecionar área…" />
         </div>
         <div>
-          <label style={labelSt}>Formato do processo</label>
-          <select style={{ ...inputSt, cursor:'pointer' }} value={data.formato} onChange={e => onChange({ ...data, formato:e.target.value })}>
+          <label style={labelSt(theme)}>Formato do processo</label>
+          <select style={{ ...inputSt(theme), cursor:'pointer' }} value={data.formato} onChange={e => onChange({ ...data, formato:e.target.value })}>
             {FORMATO_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
           </select>
         </div>
         <div style={{ gridColumn:'1/-1' }}>
-          <label style={labelSt}>Atores responsáveis (coleta) <span style={{ color:'#E24B4A' }}>*</span></label>
+          <label style={labelSt(theme)}>Atores responsáveis (coleta) <span style={{ color:'#E24B4A' }}>*</span></label>
           <ChipSelect values={data.comQuem} onChange={v => onChange({ ...data, comQuem:v })}
             options={colaborOpts} allowFreeText={true} placeholder="Selecionar colaborador…" />
         </div>
         <div style={{ gridColumn:'1/-1' }}>
-          <label style={labelSt}>Consultor(es) responsável(is) <span style={{ color:'#E24B4A' }}>*</span></label>
+          <label style={labelSt(theme)}>Consultor(es) responsável(is) <span style={{ color:'#E24B4A' }}>*</span></label>
           <ChipSelect values={data.consultor} onChange={v => onChange({ ...data, consultor:v })}
             options={consultorOpts} allowFreeText={false} placeholder="Selecionar consultor…" />
         </div>
       </div>
       <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
-        <button onClick={onCancel} style={{ fontSize:12, padding:'6px 14px', border:'0.5px solid #ccc', borderRadius:7, cursor:'pointer', background:'#fff', color:'#666' }}>Cancelar</button>
+        <button onClick={onCancel} style={{ fontSize:12, padding:'6px 14px', border: `0.5px solid ${theme === 'dark' ? '#444' : '#ccc'}`, borderRadius:7, cursor:'pointer', background:'#fff', color: theme === 'dark' ? '#d0d0d0' : '#666' }}>Cancelar</button>
         <button onClick={() => ok && onSave()} style={{ fontSize:12, padding:'6px 16px', borderRadius:7, fontWeight:500, cursor: ok ? 'pointer' : 'not-allowed', border:`0.5px solid ${ok ? BRAND : '#ccc'}`, background: ok ? BRAND : '#ccc', color:'#fff' }}>
           {isNew ? <><Icon ic={Plus} size={18} /> Adicionar</> : <><Icon ic={Check} size={12} /> Salvar alterações</>}
         </button>
@@ -1990,7 +2004,7 @@ function DeleteConfirm({ nome, onConfirm, onCancel }) {
   return (
     <div style={{ background:'#FCEBEB', border:'0.5px solid #F7C1C1', borderRadius:14, padding:'1rem 1.2rem', marginBottom:'.6rem', display:'flex', alignItems:'center', gap:12 }}>
       <span style={{ fontSize:13, color:'#791F1F', flex:1 }}>Excluir <strong>"{nome}"</strong>? Esta ação não pode ser desfeita.</span>
-      <button onClick={onCancel} style={{ fontSize:12, padding:'5px 12px', border:'0.5px solid #ccc', borderRadius:7, cursor:'pointer', background:'#fff', color:'#666' }}>Cancelar</button>
+      <button onClick={onCancel} style={{ fontSize:12, padding:'5px 12px', border: `0.5px solid ${theme === 'dark' ? '#444' : '#ccc'}`, borderRadius:7, cursor:'pointer', background:'#fff', color: theme === 'dark' ? '#d0d0d0' : '#666' }}>Cancelar</button>
       <button onClick={onConfirm} style={{ fontSize:12, padding:'5px 14px', border:'0.5px solid #A32D2D', borderRadius:7, cursor:'pointer', background:'#A32D2D', color:'#fff', fontWeight:500 }}><Icon ic={Trash2} size={11} /> Excluir</button>
     </div>
   )
@@ -2006,6 +2020,7 @@ const ROLE_BADGE = {
 }
 
 function ComentariosBox({ comentarios, onAdd, user, readonly }) {
+  const { theme } = useTheme()
   const [texto, setTexto] = useState('')
 
   function submit() {
@@ -2018,7 +2033,7 @@ function ComentariosBox({ comentarios, onAdd, user, readonly }) {
   return (
     <div style={{ marginTop:10 }}>
       {comentarios.length === 0 && (
-        <div style={{ fontSize:11, color:'#bbb', textAlign:'center', padding:'8px 0' }}>Nenhum comentário ainda.</div>
+        <div style={{ fontSize:11, color: theme === 'dark' ? '#909090' : '#bbb', textAlign:'center', padding:'8px 0' }}>Nenhum comentário ainda.</div>
       )}
       {comentarios.map(c => {
         const badge = ROLE_BADGE[c.role] || ROLE_BADGE.cliente
@@ -2027,13 +2042,13 @@ function ComentariosBox({ comentarios, onAdd, user, readonly }) {
             <div style={{ width:26, height:26, borderRadius:'50%', background:badge.bg, color:badge.color, fontSize:9, fontWeight:600, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
               {c.autor.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
             </div>
-            <div style={{ flex:1, background:'#f7f9f7', borderRadius:8, padding:'6px 9px' }}>
+            <div style={{ flex:1, background: theme === 'dark' ? '#2a2a2a' : '#f7f9f7', borderRadius:8, padding:'6px 9px' }}>
               <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
-                <span style={{ fontSize:11, fontWeight:500, color:'#111' }}>{c.autor}</span>
+                <span style={{ fontSize:11, fontWeight:500, color: theme === 'dark' ? '#f0f0f0' : '#111' }}>{c.autor}</span>
                 <span style={{ fontSize:11, padding:'4px 12px', borderRadius:99, background:badge.bg, color:badge.color, fontWeight:600 }}>{c.role}</span>
-                <span style={{ fontSize:9, color:'#bbb', marginLeft:'auto' }}>{c.data}</span>
+                <span style={{ fontSize:9, color: theme === 'dark' ? '#909090' : '#bbb', marginLeft:'auto' }}>{c.data}</span>
               </div>
-              <div style={{ fontSize:12, color:'#333', lineHeight:1.5 }}>{c.texto}</div>
+              <div style={{ fontSize:12, color: theme === 'dark' ? '#e0e0e0' : '#333', lineHeight:1.5 }}>{c.texto}</div>
             </div>
           </div>
         )
@@ -2041,7 +2056,7 @@ function ComentariosBox({ comentarios, onAdd, user, readonly }) {
       {!readonly && (
         <div style={{ display:'flex', gap:6, marginTop:6 }}>
           <input value={texto} onChange={e => setTexto(e.target.value)} onKeyDown={e => e.key==='Enter' && submit()}
-            placeholder="Adicionar comentário…" style={{ ...inputSt, flex:1, fontSize:12 }} />
+            placeholder="Adicionar comentário…" style={{ ...inputSt(theme), flex:1, fontSize:12 }} />
           <button onClick={submit} style={{ fontSize:11, padding:'5px 12px', border:`0.5px solid ${BRAND}`, borderRadius:7, cursor:'pointer', background:BRAND, color:'#fff', whiteSpace:'nowrap' }}>Comentar</button>
         </div>
       )}
@@ -2068,28 +2083,28 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting, cola
       <div style={{ display:'grid', gridTemplateColumns:'28px 1fr auto', gap:10, alignItems:'start', marginBottom:'.85rem' }}>
         <div style={{ width:26, height:26, borderRadius:'50%', background: p.confirmed ? BRAND : '#f0f0f0', color: p.confirmed ? '#fff' : '#aaa', fontSize:10, fontWeight:500, display:'flex', alignItems:'center', justifyContent:'center' }}>{p.num}</div>
         <div style={{ minWidth:0 }}>
-          <div style={{ fontSize:14, fontWeight:500, color:'#111', lineHeight:1.3, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{p.nome}</div>
+          <div style={{ fontSize:14, fontWeight:500, color: theme === 'dark' ? '#f0f0f0' : '#111', lineHeight:1.3, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{p.nome}</div>
           <div style={{ display:'flex', gap:5, marginTop:4, flexWrap:'wrap' }}>
             {(Array.isArray(p.area) ? p.area : [p.area]).filter(Boolean).map(a => (
               <span key={a} style={{ fontSize:11, padding:'4px 12px', borderRadius:99, background:BRAND_LIGHT, color:BRAND_MID, fontWeight:600 }}>{a}</span>
             ))}
             {p.formato && <span style={{ fontSize:11, padding:'4px 12px', borderRadius:99, background:'#f0f0f0', color:'#777', fontWeight:600 }}>{fmtShort}</span>}
           </div>
-          <div style={{ fontSize:11, color:'#888', marginTop:4 }}>
+          <div style={{ fontSize:11, color: theme === 'dark' ? '#b0b0b0' : '#888', marginTop:4 }}>
             <Icon ic={User} size={11} /> {(Array.isArray(p.comQuem) ? p.comQuem : [p.comQuem]).filter(Boolean).join(', ') || '—'}
             {' · '}Consultor: {(Array.isArray(p.consultor) ? p.consultor : [p.consultor]).filter(Boolean).join(', ') || '—'}
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:7 }}>
-            <div style={{ flex:1, height:8, background:'#eee', borderRadius:99, overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,0.1)' }}>
+            <div style={{ flex:1, height:8, background: theme === 'dark' ? '#222' : '#eee', borderRadius:99, overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,0.1)' }}>
               <div style={{ height:'100%', width:`${pct}%`, background:barColor, borderRadius:99, transition:'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }} />
             </div>
             <span style={{ fontSize:12, fontWeight:600, color:barColor, flexShrink:0 }}>{pct}%</span>
-            <span style={{ fontSize:10, color:'#bbb', flexShrink:0 }}>{STAGE_KEYS.filter(s=>p[s.key]).length}/{STAGE_KEYS.length}</span>
+            <span style={{ fontSize:10, color: theme === 'dark' ? '#909090' : '#bbb', flexShrink:0 }}>{STAGE_KEYS.filter(s=>p[s.key]).length}/{STAGE_KEYS.length}</span>
           </div>
         </div>
         <div style={{ display:'flex', gap:5, flexWrap:'wrap', justifyContent:'flex-end' }}>
           {canSchedule && <button onClick={() => setScheduling(s => !s)} title="Agendar reunião" style={{ fontSize:11, padding:'4px 9px', borderRadius:6, cursor:'pointer', border: scheduling ? `0.5px solid ${BRAND_MID}` : '0.5px solid #d0d0d0', background: scheduling ? BRAND_LIGHT : '#fff', color: scheduling ? BRAND : '#555' }}>📅</button>}
-          {canEdit && !p.confirmed && <button onClick={() => onEdit(p)} title="Editar" style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #d0d0d0', borderRadius:6, cursor:'pointer', background:'#fff', color:'#555' }}><Icon ic={Pencil} size={11} /></button>}
+          {canEdit && !p.confirmed && <button onClick={() => onEdit(p)} title="Editar" style={{ fontSize:11, padding:'4px 9px', border: `0.5px solid ${theme === 'dark' ? '#444' : '#d0d0d0'}`, borderRadius:6, cursor:'pointer', background:'#fff', color: theme === 'dark' ? '#d0d0d0' : '#555' }}><Icon ic={Pencil} size={11} /></button>}
           {canEdit && !p.confirmed && <button onClick={() => onDelete(p.id)} title="Excluir" style={{ fontSize:11, padding:'4px 9px', border:'0.5px solid #f5c6c6', borderRadius:6, cursor:'pointer', background:'#fff', color:'#A32D2D' }}><Icon ic={Trash2} size={11} /></button>}
           {canConfirm && <button onClick={() => ready && onConfirm(p.id)} style={{
             fontSize:11, padding:'5px 11px', borderRadius:7, whiteSpace:'nowrap', cursor: ready ? 'pointer' : 'default',
@@ -2124,9 +2139,9 @@ function ProcCard({ p, onToggle, onConfirm, onEdit, onDelete, onAddMeeting, cola
       )}
       {/* Comments section */}
       <div style={{ borderTop:'0.5px solid #f0f0f0', marginTop:10, paddingTop:8 }}>
-        <div onClick={() => setShowComments(s => !s)} style={{ display:'flex', alignItems:'center', gap:6, cursor:'pointer', fontSize:11, color:'#666', userSelect:'none' }}>
+        <div onClick={() => setShowComments(s => !s)} style={{ display:'flex', alignItems:'center', gap:6, cursor:'pointer', fontSize:11, color: theme === 'dark' ? '#d0d0d0' : '#666', userSelect:'none' }}>
           <span><Icon ic={MessageSquare} size={13} /> Comentários ({comentarios.length})</span>
-          <span style={{ fontSize:10, color:'#bbb' }}>{showComments ? '▲' : '▼'}</span>
+          <span style={{ fontSize:10, color: theme === 'dark' ? '#909090' : '#bbb' }}>{showComments ? '▲' : '▼'}</span>
         </div>
         {showComments && (
           <ComentariosBox
@@ -2165,7 +2180,7 @@ function Processos({ processes, consultores, colaboradores, areas, onToggle, onC
   return (
     <div>
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:'1.25rem' }}>
-        <div style={{ fontSize:26, fontWeight:700, color:'#111' }}>Controle de Mapeamento de Processos</div>
+        <div style={{ fontSize:26, fontWeight:700, color: theme === 'dark' ? '#f0f0f0' : '#111' }}>Controle de Mapeamento de Processos</div>
         {canEdit && (
           <button onClick={() => { setShowAdd(s=>!s); setEditingId(null); setDeletingId(null) }}
             style={{ fontSize:12, padding:'7px 15px', border:`0.5px solid ${BRAND}`, borderRadius:8, cursor:'pointer', background: showAdd ? '#f0f0f0' : BRAND, color: showAdd ? '#555' : '#fff', fontWeight:500, flexShrink:0, marginTop:2 }}>
@@ -2184,27 +2199,27 @@ function Processos({ processes, consultores, colaboradores, areas, onToggle, onC
 
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'.75rem', marginBottom:'1rem' }}>
         {[['Total',total,'#111'],['Em andamento',processes.filter(p=>getPct(p)>0&&!p.confirmed).length,'#BA7517'],['Concluídos',done,BRAND_MID],['Progresso',`${avgPct}%`,BRAND]].map(([l,v,c]) => (
-          <div key={l} style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, padding:'.8rem 1rem', boxShadow:'0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div key={l} style={{ background:'#fff', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderRadius:14, padding:'.8rem 1rem', boxShadow:'0 1px 3px rgba(0,0,0,0.05)' }}>
             <div style={{ fontSize:20, fontWeight:500, color:c }}>{v}</div>
-            <div style={{ fontSize:10, color:'#888', marginTop:1 }}>{l}</div>
+            <div style={{ fontSize:10, color: theme === 'dark' ? '#b0b0b0' : '#888', marginTop:1 }}>{l}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, padding:'.9rem 1.1rem', marginBottom:'1.1rem', boxShadow:'0 1px 3px rgba(0,0,0,0.05)' }}>
+      <div style={{ background:'#fff', border: `0.5px solid ${theme === 'dark' ? '#333' : '#e2e8e4'}`, borderRadius:14, padding:'.9rem 1.1rem', marginBottom:'1.1rem', boxShadow:'0 1px 3px rgba(0,0,0,0.05)' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
-          <span style={{ fontSize:12, fontWeight:500, color:'#555' }}>Progresso geral</span>
+          <span style={{ fontSize:12, fontWeight:500, color: theme === 'dark' ? '#d0d0d0' : '#555' }}>Progresso geral</span>
           <span style={{ fontSize:14, fontWeight:600, color:barClr }}>{avgPct}%</span>
         </div>
-        <div style={{ height:10, background:'#eee', borderRadius:99, overflow:'hidden' }}>
+        <div style={{ height:10, background: theme === 'dark' ? '#222' : '#eee', borderRadius:99, overflow:'hidden' }}>
           <div style={{ height:'100%', width:`${avgPct}%`, background:barClr, borderRadius:99, transition:'width .5s' }} />
         </div>
       </div>
 
-      <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:'.75rem', fontSize:11, color:'#888', flexWrap:'wrap' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:'.75rem', fontSize:11, color: theme === 'dark' ? '#b0b0b0' : '#888', flexWrap:'wrap' }}>
         <span style={{ display:'flex', alignItems:'center', gap:5 }}><span style={{ width:14, height:14, borderRadius:4, background:BRAND, display:'inline-block' }} /> Etapa concluída</span>
         <span style={{ display:'flex', alignItems:'center', gap:5 }}><span style={{ width:14, height:14, borderRadius:4, border:'1.5px dashed #d0d0d0', display:'inline-block' }} /> Pendente</span>
-        <span style={{ marginLeft:'auto', fontSize:10, color:'#ccc' }}>📅 agendar · <Icon ic={Pencil} size={11} /> editar · <Icon ic={Trash2} size={11} /> excluir</span>
+        <span style={{ marginLeft:'auto', fontSize:10, color: theme === 'dark' ? '#808080' : '#ccc' }}>📅 agendar · <Icon ic={Pencil} size={11} /> editar · <Icon ic={Trash2} size={11} /> excluir</span>
       </div>
 
       {processes.map(p => {
@@ -2220,8 +2235,8 @@ function Processos({ processes, consultores, colaboradores, areas, onToggle, onC
 function ColaboradoresTab({ colaboradores, onAdd, onUpdate, onDelete }) {
   return (
     <div>
-      <div style={{ fontSize:26, fontWeight:700, color:'#111', marginBottom:'.2rem' }}>Colaboradores</div>
-      <div style={{ fontSize:13, color:'#999', marginBottom:'1.5rem' }}>Gerencie os colaboradores da sua empresa</div>
+      <div style={{ fontSize:26, fontWeight:700, color: theme === 'dark' ? '#f0f0f0' : '#111', marginBottom:'.2rem' }}>Colaboradores</div>
+      <div style={{ fontSize:13, color: theme === 'dark' ? '#a0a0a0' : '#999', marginBottom:'1.5rem' }}>Gerencie os colaboradores da sua empresa</div>
 
       <PeopleSection
         title="Colaboradores / Atores"
@@ -2238,6 +2253,7 @@ function ColaboradoresTab({ colaboradores, onAdd, onUpdate, onDelete }) {
 }
 
 function Levantamento({ consultores, colaboradores, areas, onAdd, onGoProcessos }) {
+  const { theme } = useTheme()
   const [data,    setData   ] = useState({ nome:'', area:[], comQuem:[], consultor:[], formato:FORMATO_OPTS[0] })
   const [success, setSuccess] = useState(false)
 
@@ -2249,14 +2265,14 @@ function Levantamento({ consultores, colaboradores, areas, onAdd, onGoProcessos 
 
   return (
     <div>
-      <div style={{ fontSize:26, fontWeight:700, color:'#111', marginBottom:'.2rem' }}>Levantamento de Processos</div>
-      <div style={{ fontSize:13, color:'#999', marginBottom:'1.5rem' }}>Cadastre um novo processo para acompanhamento</div>
+      <div style={{ fontSize:26, fontWeight:700, color: theme === 'dark' ? '#f0f0f0' : '#111', marginBottom:'.2rem' }}>Levantamento de Processos</div>
+      <div style={{ fontSize:13, color: theme === 'dark' ? '#a0a0a0' : '#999', marginBottom:'1.5rem' }}>Cadastre um novo processo para acompanhamento</div>
 
       {success ? (
         <div style={{ background:BRAND_LIGHT, border:`0.5px solid ${BRAND_BRD}`, borderRadius:14, padding:'1.5rem', textAlign:'center' }}>
           <div style={{ fontSize:22, marginBottom:8 }}><Icon ic={CheckCircle} size={16} /></div>
           <div style={{ fontSize:14, fontWeight:500, color:BRAND, marginBottom:4 }}>Processo lançado!</div>
-          <div style={{ fontSize:12, color:'#555', marginBottom:'1.25rem' }}>Acesse a aba Processos para acompanhar.</div>
+          <div style={{ fontSize:12, color: theme === 'dark' ? '#d0d0d0' : '#555', marginBottom:'1.25rem' }}>Acesse a aba Processos para acompanhar.</div>
           <div style={{ display:'flex', gap:8, justifyContent:'center' }}>
             <button onClick={() => setSuccess(false)} style={{ fontSize:12, padding:'7px 16px', border:`0.5px solid ${BRAND_BRD}`, borderRadius:8, cursor:'pointer', background:'#fff', color:BRAND }}><Icon ic={Plus} size={18} /> Lançar outro</button>
             <button onClick={onGoProcessos} style={{ fontSize:12, padding:'7px 16px', border:`0.5px solid ${BRAND}`, borderRadius:8, cursor:'pointer', background:BRAND, color:'#fff', fontWeight:500 }}>Ver Processos</button>
