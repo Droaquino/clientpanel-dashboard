@@ -1779,7 +1779,7 @@ function ScheduleForm({ processName, defaultWho, colaboradores, onSave, onCancel
   return (
     <div style={{ marginTop:10, padding:'12px 14px', background:'#F0F7F3', border:`1px solid ${BRAND_BRD}`, borderRadius:10 }}>
       <div style={{ fontSize:11, fontWeight:500, color:BRAND, marginBottom:10 }}>
-        📅 Agendar reunião — <span style={{ fontWeight:400, color:BRAND_MID }}>{processName}</span>
+        📅 Agendar reunião
       </div>
 
       {/* success banner */}
