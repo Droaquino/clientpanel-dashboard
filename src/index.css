@@ -4,8 +4,14 @@
 
 body {
   font-family: Inter, system-ui, sans-serif;
-  background: #f0f2f0;
+  background: linear-gradient(180deg, #f0f2f0 0%, #e8f0e8 100%);
   -webkit-font-smoothing: antialiased;
+  color: #111;
+}
+
+body[data-theme="dark"] {
+  background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
+  color: #f0f0f0;
 }
 
 #root {

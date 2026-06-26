@@ -460,16 +460,17 @@ const initProcesses = [
 ]
 
 // ─── Shared styles ────────────────────────────────────────────
-const inputSt = { width:'100%', padding:'6px 10px', fontSize:13, border:'0.5px solid #ccc', borderRadius:7, background:'#fafafa', color:'#111', outline:'none' }
-const labelSt = { fontSize:12, color:'#666', marginBottom:3, display:'block' }
+const inputSt = { width:'100%', padding:'7px 12px', fontSize:13, border:'0.5px solid #ccc', borderRadius:8, background:'linear-gradient(135deg, #fafbfa 0%, #f5f9f7 100%)', color:'#111', outline:'none' }
+const labelSt = { fontSize:12, color:'#666', marginBottom:4, display:'block', fontWeight:500 }
 
 // Reusable button hover state
-const hoverBtnSt = (isHovered) => ({ transition:'all 0.2s ease', filter: isHovered ? 'brightness(0.95)' : 'brightness(1)' })
-const hoverCardSt = (isHovered) => ({ transition:'all 0.2s ease', filter: isHovered ? 'brightness(1.01)' : 'brightness(1)', boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.08)' : '0 1px 3px rgba(0,0,0,0.05)' })
+const hoverBtnSt = (isHovered) => ({ transition:'all 0.2s ease', filter: isHovered ? 'brightness(0.90)' : 'brightness(1)' })
+const hoverCardSt = (isHovered) => ({ transition:'all 0.2s ease', filter: isHovered ? 'brightness(1.02)' : 'brightness(1)', boxShadow: isHovered ? '0 8px 24px rgba(0,0,0,0.12)' : '0 2px 8px rgba(0,0,0,0.06)' })
 
 // ─── Sidebar ─────────────────────────────────────────────────
 function Sidebar({ tab, setTab, user, onLogout, onTabChange }) {
   const { theme, setTheme } = useTheme()
+  const colors = themes[theme]
   const [collapsed, setCollapsed] = useState(false)
   const role = user?.role || 'cliente'
 
@@ -481,79 +482,81 @@ function Sidebar({ tab, setTab, user, onLogout, onTabChange }) {
     setTheme(theme === 'light' ? 'dark' : 'light')
   }
   const allItems = [
-    { id:'dashboard',    icon: <Icon ic={BarChart2} />, label:'Dashboard',     roles:['coordenador','consultor','socio'] },
-    { id:'agenda',       icon: <Icon ic={Calendar} />, label:'Agenda',         roles:['coordenador','consultor'] },
-    { id:'levantamento', icon: <Icon ic={ClipboardList} />, label:'Levantamento',   roles:['coordenador','consultor'] },
-    { id:'processos',    icon: <Icon ic={FolderOpen} />,  label:'Processos',      roles:['coordenador','consultor','socio','cliente'] },
-    { id:'colaboradores',icon: <Icon ic={User} />, label:'Colaboradores',  roles:['socio'] },
-    { id:'configuracoes',icon: <Icon ic={Settings} />, label:'Configurações',  roles:['coordenador'] },
+    { id:'dashboard',    icon: <Icon ic={BarChart2} size={36} />, label:'Dashboard',     roles:['coordenador','consultor','socio'] },
+    { id:'agenda',       icon: <Icon ic={Calendar} size={36} />, label:'Agenda',         roles:['coordenador','consultor'] },
+    { id:'levantamento', icon: <Icon ic={ClipboardList} size={36} />, label:'Levantamento',   roles:['coordenador','consultor'] },
+    { id:'processos',    icon: <Icon ic={FolderOpen} size={36} />,  label:'Processos',      roles:['coordenador','consultor','socio','cliente'] },
+    { id:'colaboradores',icon: <Icon ic={User} size={36} />, label:'Colaboradores',  roles:['socio'] },
+    { id:'configuracoes',icon: <Icon ic={Settings} size={36} />, label:'Configurações',  roles:['coordenador'] },
   ]
   const items = allItems.filter(i => i.roles.includes(role))
   const initials = (user?.nome||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
-  const w = collapsed ? 52 : 210
+  const w = collapsed ? 60 : 220
   return (
-    <nav style={{ width:w, flexShrink:0, background:BRAND, display:'flex', flexDirection:'column', transition:'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)', overflow:'hidden', position:'relative' }}>
+    <nav style={{ width:w, flexShrink:0, background: theme === 'light' ? BRAND : colors.sidebarBg, backgroundImage: theme === 'light' ? `linear-gradient(180deg, #163828 0%, #0f2a1f 100%)` : colors.sidebarGradient, display:'flex', flexDirection:'column', transition:'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)', overflow:'hidden', position:'relative' }}>
       {/* Toggle separado — flutua sobre a borda direita */}
       <button
         onClick={() => setCollapsed(c => !c)}
         title={collapsed ? 'Expandir menu' : 'Recolher menu'}
         style={{
           position:'absolute', top:12, right: collapsed ? 8 : 8, zIndex:10,
-          width:22, height:22, borderRadius:'50%', border:'none', cursor:'pointer',
-          background:'rgba(255,255,255,.15)', color:'rgba(255,255,255,.8)',
+          width:26, height:26, borderRadius:'50%', border:'none', cursor:'pointer',
+          background:'rgba(255,255,255,.18)', color:'rgba(255,255,255,.9)',
           display:'flex', alignItems:'center', justifyContent:'center',
-          fontSize:11, lineHeight:1, flexShrink:0,
+          fontSize:11, lineHeight:1, flexShrink:0, transition:'all 0.2s ease',
         }}
-      ><Icon ic={collapsed ? ChevronRight : ChevronLeft} size={14} /></button>
+        onMouseOver={e => { e.target.style.background = 'rgba(255,255,255,.28)'; e.target.style.transform = 'scale(1.1)' }}
+        onMouseOut={e => { e.target.style.background = 'rgba(255,255,255,.18)'; e.target.style.transform = 'scale(1)' }}
+      ><Icon ic={collapsed ? ChevronRight : ChevronLeft} size={18} /></button>
 
       {/* Cabeçalho */}
-      <div style={{ padding:'0 .75rem 1rem', borderBottom:'1px solid rgba(255,255,255,.1)', marginBottom:'.5rem', paddingTop:'1rem', paddingRight: collapsed ? '.75rem' : '2.5rem' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <div style={{ width:32, height:32, flexShrink:0, background:'rgba(255,255,255,.15)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, color:'#fff' }}><Icon ic={LayoutGrid} size={18} /></div>
+      <div style={{ padding:'0 1.25rem 1.5rem', borderBottom:'1px solid rgba(255,255,255,.12)', marginBottom:'1rem', paddingTop:'1.5rem', paddingRight: collapsed ? '1rem' : '2.8rem' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <div style={{ width:44, height:44, flexShrink:0, background:'linear-gradient(135deg, rgba(255,255,255,.25) 0%, rgba(255,255,255,.15) 100%)', borderRadius:13, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, color:'#fff', boxShadow:'0 4px 12px rgba(0,0,0,0.3)', border:'1px solid rgba(255,255,255,.2)' }}><Icon ic={LayoutGrid} size={26} /></div>
           <div style={{ opacity: collapsed ? 0 : 1, transition:'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
-            <div style={{ fontSize:13, fontWeight:500, color:'#fff', whiteSpace:'nowrap' }}>Painel de Controle</div>
-            <div style={{ fontSize:10, color:'rgba(255,255,255,.5)' }}>DF Turismo</div>
+            <div style={{ fontSize:15, fontWeight:700, color:'#fff', whiteSpace:'nowrap', letterSpacing:'-0.3px' }}>Painel de Controle</div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,.65)' }}>DF Turismo</div>
           </div>
         </div>
       </div>
 
       {/* Itens de menu */}
       {items.map(({ id, icon, label }) => (
-        <div key={id} onClick={() => handleTabClick(id)} onMouseEnter={e => { if (collapsed && !tab.includes(id)) e.currentTarget.style.background = 'rgba(255,255,255,0.12)' }} onMouseLeave={e => { if (collapsed && !tab.includes(id)) e.currentTarget.style.background = 'transparent' }} title={collapsed ? label : ''} style={{
-          display:'flex', alignItems:'center', gap:10,
-          padding: collapsed ? '10px 0' : '10px 1rem',
+        <div key={id} onClick={() => handleTabClick(id)} onMouseEnter={e => { if (!tab.includes(id)) e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }} onMouseLeave={e => { if (!tab.includes(id)) e.currentTarget.style.background = 'transparent' }} title={collapsed ? label : ''} style={{
+          display:'flex', alignItems:'center', gap:14,
+          padding: collapsed ? '16px 0' : '16px 1rem',
           justifyContent: collapsed ? 'center' : 'flex-start',
           cursor:'pointer',
-          fontSize:13, color: tab===id ? '#fff' : 'rgba(255,255,255,.6)',
-          borderLeft:`2.5px solid ${tab===id ? ACCENT : 'transparent'}`,
-          background: tab===id ? 'rgba(255,255,255,.1)' : 'transparent',
-          fontWeight: tab===id ? 500 : 400,
-          transition: 'background 0.2s ease',
+          fontSize:14, color: tab===id ? '#fff' : 'rgba(255,255,255,.7)',
+          borderLeft:`4px solid ${tab===id ? ACCENT : 'transparent'}`,
+          background: tab===id ? 'rgba(255,255,255,.15)' : 'transparent',
+          fontWeight: tab===id ? 600 : 500,
+          transition: 'all 0.2s ease',
         }}>
-          <span style={{ fontSize: collapsed ? 22 : 20 }}>{icon}</span>
-          {!collapsed && label}
+          <span style={{ fontSize: collapsed ? 36 : 36, display:'flex', alignItems:'center', justifyContent:'center' }}>{icon}</span>
+          {!collapsed && <span style={{fontSize: 14, whiteSpace:'nowrap' }}>{label}</span>}
         </div>
       ))}
 
       {/* Perfil + Logout + Theme Toggle — logo abaixo dos itens, sem marginTop:auto */}
-      <div style={{ padding: collapsed ? '.75rem 0' : '.75rem 1rem', borderTop:'1px solid rgba(255,255,255,.1)', marginTop:12 }}>
+      <div style={{ padding: collapsed ? '1rem 0.5rem' : '1rem 1rem', borderTop:'1px solid rgba(255,255,255,.1)', marginTop:12 }}>
         {collapsed ? (
           <>
-            <button onClick={toggleTheme} title={theme==='light' ? 'Dark mode' : 'Light mode'} style={{ width:'100%', fontSize:13, padding:'4px 0', border:'0.5px solid rgba(255,255,255,.25)', borderRadius:6, cursor:'pointer', background:'rgba(255,255,255,.08)', color:'rgba(255,255,255,.7)', marginBottom:6 }}><Icon ic={theme==='light' ? Moon : Sun} size={13} /></button>
-            <div title={user?.nome} style={{ width:28, height:28, borderRadius:'50%', background:ACCENT, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'#0D2519', fontWeight:600, margin:'0 auto 6px' }}>{initials}</div>
-            <button onClick={onLogout} title="Sair" style={{ width:'100%', fontSize:13, padding:'4px 0', border:'0.5px solid rgba(255,255,255,.25)', borderRadius:6, cursor:'pointer', background:'rgba(255,255,255,.08)', color:'rgba(255,255,255,.7)' }}><Icon ic={LogOut} size={13} /></button>
+            <button onClick={toggleTheme} title={theme==='light' ? 'Dark mode' : 'Light mode'} style={{ width:'100%', fontSize:13, padding:'8px 6px', border:'1px solid rgba(255,255,255,.25)', borderRadius:8, cursor:'pointer', background:'rgba(255,255,255,.12)', color:'rgba(255,255,255,.9)', marginBottom:8, transition:'all 0.2s ease', display:'flex', alignItems:'center', justifyContent:'center' }} onMouseOver={e => { e.target.style.background = 'rgba(255,255,255,.2)'; e.target.style.borderColor = 'rgba(255,255,255,.5)' }} onMouseOut={e => { e.target.style.background = 'rgba(255,255,255,.12)'; e.target.style.borderColor = 'rgba(255,255,255,.25)' }}><Icon ic={theme==='light' ? Moon : Sun} size={18} /></button>
+            <div title={user?.nome} style={{ width:32, height:32, borderRadius:'50%', background:ACCENT, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'#0D2519', fontWeight:700, margin:'0 auto 8px' }}>{initials}</div>
+            <button onClick={onLogout} title="Sair" style={{ width:'100%', fontSize:13, padding:'8px 6px', border:'1px solid rgba(255,255,255,.25)', borderRadius:8, cursor:'pointer', background:'rgba(255,255,255,.12)', color:'rgba(255,255,255,.9)', transition:'all 0.2s ease', display:'flex', alignItems:'center', justifyContent:'center' }} onMouseOver={e => { e.target.style.background = 'rgba(255,255,255,.2)'; e.target.style.borderColor = 'rgba(255,255,255,.5)' }} onMouseOut={e => { e.target.style.background = 'rgba(255,255,255,.12)'; e.target.style.borderColor = 'rgba(255,255,255,.25)' }}><Icon ic={LogOut} size={18} /></button>
           </>
         ) : (
           <>
-            <button onClick={toggleTheme} title={theme==='light' ? 'Dark mode' : 'Light mode'} style={{ width:'100%', fontSize:11, padding:'5px', border:'0.5px solid rgba(255,255,255,.25)', borderRadius:6, cursor:'pointer', background:'rgba(255,255,255,.08)', color:'rgba(255,255,255,.7)', marginBottom:6, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}><Icon ic={theme==='light' ? Moon : Sun} size={12} /> {theme==='light' ? 'Dark' : 'Light'}</button>
-            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-              <div style={{ width:28, height:28, borderRadius:'50%', background:ACCENT, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'#0D2519', fontWeight:600, flexShrink:0 }}>{initials}</div>
+            <button onClick={toggleTheme} title={theme==='light' ? 'Dark mode' : 'Light mode'} style={{ width:'100%', fontSize:11, padding:'9px 10px', border:'1px solid rgba(255,255,255,.25)', borderRadius:8, cursor:'pointer', background:'rgba(255,255,255,.12)', color:'rgba(255,255,255,.9)', marginBottom:9, display:'flex', alignItems:'center', justifyContent:'center', gap:7, fontWeight:600, transition:'all 0.2s ease' }} onMouseOver={e => { e.target.style.background = 'rgba(255,255,255,.2)'; e.target.style.borderColor = 'rgba(255,255,255,.5)' }} onMouseOut={e => { e.target.style.background = 'rgba(255,255,255,.12)'; e.target.style.borderColor = 'rgba(255,255,255,.25)' }}><Icon ic={theme==='light' ? Moon : Sun} size={16} /> {theme==='light' ? 'Dark' : 'Light'}</button>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:9 }}>
+              <div style={{ width:32, height:32, borderRadius:'50%', background:ACCENT, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'#0D2519', fontWeight:700, flexShrink:0 }}>{initials}</div>
               <div style={{ minWidth:0 }}>
-                <div style={{ fontSize:12, color:'rgba(255,255,255,.85)', fontWeight:500, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{user?.nome}</div>
-                <div style={{ fontSize:10, color:'rgba(255,255,255,.5)' }}>{user?.cargo}</div>
+                <div style={{ fontSize:12, color:'rgba(255,255,255,.9)', fontWeight:600, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{user?.nome}</div>
+                <div style={{ fontSize:10, color:'rgba(255,255,255,.6)' }}>{user?.cargo}</div>
               </div>
             </div>
-            <button onClick={onLogout} style={{ width:'100%', fontSize:11, padding:'5px', border:'0.5px solid rgba(255,255,255,.25)', borderRadius:6, cursor:'pointer', background:'rgba(255,255,255,.08)', color:'rgba(255,255,255,.7)' }}>Sair</button>
+            <button onClick={onLogout} style={{ width:'100%', fontSize:11, padding:'7px 10px', border:'0.5px solid rgba(255,255,255,.25)', borderRadius:7, cursor:'pointer', background:'rgba(255,255,255,.1)', color:'rgba(255,255,255,.85)', fontWeight:500, transition:'all 0.2s ease' }} onMouseOver={e => { e.target.style.background = 'rgba(255,255,255,.18)' }} onMouseOut={e => { e.target.style.background = 'rgba(255,255,255,.1)' }}>Sair</button>
           </>
         )}
       </div>
@@ -570,7 +573,7 @@ function PersonCard({ person, type, onEdit, onDelete }) {
   const initials = person.nome.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
   const avatarBg = type==='consultor' ? BRAND : '#6B7280'
   return (
-    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, padding:'1.25rem', display:'flex', gap:14, alignItems:'flex-start', boxShadow:'0 1px 3px rgba(0,0,0,0.05)', animation:'slideInUp 0.4s ease-out' }}>
+    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, padding:'1.5rem', display:'flex', gap:14, alignItems:'flex-start', boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', animation:'slideInUp 0.4s ease-out' }}>
       <div style={{ width:40, height:40, borderRadius:'50%', background:avatarBg, color:'#fff', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{initials}</div>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontSize:13, fontWeight:500, color:'#111' }}>{person.nome}</div>
@@ -600,7 +603,7 @@ function PersonCard({ person, type, onEdit, onDelete }) {
 
 function AreaCard({ area, onEdit, onDelete }) {
   return (
-    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, padding:'1.25rem', display:'flex', gap:14, alignItems:'flex-start', boxShadow:'0 1px 3px rgba(0,0,0,0.05)', animation:'slideInUp 0.4s ease-out' }}>
+    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, padding:'1.5rem', display:'flex', gap:14, alignItems:'flex-start', boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', animation:'slideInUp 0.4s ease-out' }}>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontSize:13, fontWeight:500, color:'#111' }}>{area.nome}</div>
         <div style={{ fontSize:11, color:'#888', marginTop:2 }}>
@@ -618,7 +621,7 @@ function AreaCard({ area, onEdit, onDelete }) {
 function AreaForm({ data, onChange, onSave, onCancel, isNew }) {
   const ok = (data.nome||'').trim()
   return (
-    <div style={{ background: isNew ? '#FAFCFA' : '#f8fbf9', border:`1.5px solid ${BRAND_BRD}`, borderRadius:14, padding:'1rem 1.2rem', marginBottom:'.75rem' }}>
+    <div style={{ background: isNew ? '#FAFCFA' : '#f8fbf9', border:`1.5px solid ${BRAND_BRD}`, borderTop:`3px solid ${BRAND}`, borderRadius:14, padding:'1.25rem 1.35rem', marginBottom:'.8rem', boxShadow:'0 2px 8px rgba(22, 56, 40, 0.08)' }}>
       <div style={{ fontSize:13, fontWeight:500, color:BRAND, marginBottom:'1rem' }}>{isNew ? <><Icon ic={Plus} size={12} /> Nova área</> : <><Icon ic={Pencil} size={12} /> Editando área</>}</div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginBottom:'1rem' }}>
         <div style={{ gridColumn:'1/-1' }}>
@@ -634,9 +637,9 @@ function AreaForm({ data, onChange, onSave, onCancel, isNew }) {
           </label>
         </div>
       </div>
-      <div style={{ display:'flex', gap:'0.75rem', justifyContent:'flex-end' }}>
-        <button onClick={onCancel} style={{ fontSize:12, padding:'6px 13px', border:`0.5px solid #d0d0d0`, borderRadius:8, cursor:'pointer', background:'#fff', color:'#555', fontWeight:500 }}>Cancelar</button>
-        <button onClick={onSave} disabled={!ok} style={{ fontSize:12, padding:'6px 13px', borderRadius:8, cursor: ok ? 'pointer' : 'default', border:`0.5px solid ${ok ? BRAND : '#ddd'}`, background: ok ? BRAND : '#f0f0f0', color: ok ? '#fff' : '#ccc', fontWeight:500 }}>Salvar</button>
+      <div style={{ display:'flex', gap:'0.85rem', justifyContent:'flex-end' }}>
+        <button onClick={onCancel} style={{ fontSize:12, padding:'7px 16px', border:`0.5px solid #d0d0d0`, borderRadius:8, cursor:'pointer', background:'#fff', color:'#555', fontWeight:500, transition:'all 0.2s ease' }} onMouseOver={e => { e.target.style.background = '#f5f5f5' }} onMouseOut={e => { e.target.style.background = '#fff' }}>Cancelar</button>
+        <button onClick={onSave} disabled={!ok} style={{ fontSize:12, padding:'7px 16px', borderRadius:8, cursor: ok ? 'pointer' : 'default', border:`0.5px solid ${ok ? BRAND : '#ddd'}`, background: ok ? BRAND : '#f0f0f0', color: ok ? '#fff' : '#ccc', fontWeight:600, boxShadow: ok ? '0 4px 15px rgba(22, 56, 40, 0.3)' : 'none', transition:'all 0.2s ease' }} onMouseOver={e => { if (ok) { e.target.style.filter = 'brightness(0.90)' } }} onMouseOut={e => { e.target.style.filter = 'brightness(1)' }}>Salvar</button>
       </div>
     </div>
   )
@@ -674,7 +677,7 @@ function PersonForm({ data, onChange, onSave, onCancel, type, isNew }) {
   }
 
   return (
-    <div style={{ background: isNew ? '#FAFCFA' : '#f8fbf9', border:`1.5px solid ${BRAND_BRD}`, borderRadius:14, padding:'1rem 1.2rem', marginBottom:'.75rem' }}>
+    <div style={{ background: isNew ? '#FAFCFA' : '#f8fbf9', border:`1.5px solid ${BRAND_BRD}`, borderTop:`3px solid ${BRAND}`, borderRadius:14, padding:'1.25rem 1.35rem', marginBottom:'.8rem', boxShadow:'0 2px 8px rgba(22, 56, 40, 0.08)' }}>
       <div style={{ fontSize:13, fontWeight:500, color:BRAND, marginBottom:'1rem' }}>{isNew ? <><Icon ic={Plus} size={12} /> Novo registro</> : <><Icon ic={Pencil} size={12} /> Editando registro</>}</div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginBottom:'1rem' }}>
         {fields.map(f => (
@@ -721,14 +724,16 @@ function PersonForm({ data, onChange, onSave, onCancel, type, isNew }) {
         </div>
       )}
 
-      <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
-        <button onClick={onCancel} style={{ fontSize:12, padding:'6px 14px', border:'0.5px solid #ccc', borderRadius:7, cursor:'pointer', background:'#fff', color:'#666' }}>Cancelar</button>
+      <div style={{ display:'flex', gap:9, justifyContent:'flex-end' }}>
+        <button onClick={onCancel} style={{ fontSize:12, padding:'7px 16px', border:'0.5px solid #ccc', borderRadius:8, cursor:'pointer', background:'#fff', color:'#666', fontWeight:500, transition:'all 0.2s ease' }} onMouseOver={e => { e.target.style.background = '#f5f5f5' }} onMouseOut={e => { e.target.style.background = '#fff' }}>Cancelar</button>
         <button onClick={handleSave} style={{
-          fontSize:12, padding:'6px 16px', borderRadius:7, fontWeight:500,
+          fontSize:12, padding:'7px 18px', borderRadius:8, fontWeight:600,
           cursor: ok ? 'pointer' : 'not-allowed',
           border:`0.5px solid ${ok ? BRAND : '#ccc'}`,
           background: ok ? BRAND : '#ccc', color:'#fff',
-        }}>{isNew ? <><Icon ic={Plus} size={12} /> Adicionar</> : <><Icon ic={Check} size={12} /> Salvar</>}</button>
+          boxShadow: ok ? '0 4px 15px rgba(22, 56, 40, 0.3)' : 'none',
+          transition:'all 0.2s ease'
+        }} onMouseOver={e => { if (ok) { e.target.style.filter = 'brightness(0.90)' } }} onMouseOut={e => { e.target.style.filter = 'brightness(1)' }}>{isNew ? <><Icon ic={Plus} size={14} /> Adicionar</> : <><Icon ic={Check} size={14} /> Salvar</>}</button>
       </div>
     </div>
   )
@@ -764,23 +769,23 @@ function PeopleSection({ title, subtitle, type, people, onAdd, onUpdate, onDelet
   }
 
   return (
-    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, boxShadow:'0 1px 3px rgba(0,0,0,0.05)', overflow:'hidden', flex:1, minWidth:0 }}>
+    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', overflow:'hidden', flex:1, minWidth:0 }}>
       {/* Header */}
-      <div style={{ padding:'1rem 1.25rem', background: accentColor+'18', borderBottom:`0.5px solid ${accentColor}40`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <div style={{ padding:'1.25rem 1.5rem', background: accentColor+'1A', borderBottom:`0.5px solid ${accentColor}45`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
           <div style={{ fontSize:15, fontWeight:600, color: accentColor }}>{title}</div>
           <div style={{ fontSize:11, color:'#888', marginTop:2 }}>{subtitle}</div>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <span style={{ fontSize:11, fontWeight:600, color: accentColor, background: accentColor+'1A', padding:'4px 12px', borderRadius:99 }}>{people.length}</span>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <span style={{ fontSize:11, fontWeight:700, color: accentColor, background: accentColor+'22', padding:'5px 14px', borderRadius:99 }}>{people.length}</span>
           <button onClick={() => { setShowAdd(s=>!s); setEditingId(null); setDeletingId(null) }}
-            style={{ fontSize:12, padding:'6px 13px', border:`0.5px solid ${accentColor}`, borderRadius:8, cursor:'pointer', background: showAdd ? '#f0f0f0' : accentColor, color: showAdd ? '#555' : '#fff', fontWeight:500 }}>
-            {showAdd ? <Icon ic={X} size={13} /> : <><Icon ic={Plus} size={12} /> Novo</>}
+            style={{ fontSize:12, padding:'7px 16px', border:`0.5px solid ${accentColor}`, borderRadius:8, cursor:'pointer', background: showAdd ? '#f0f0f0' : accentColor, color: showAdd ? '#555' : '#fff', fontWeight:600, boxShadow: !showAdd ? `0 4px 15px ${accentColor}4d` : 'none', transition:'all 0.2s ease' }} onMouseOver={e => { if (!showAdd) e.target.style.filter = 'brightness(0.90)' }} onMouseOut={e => { e.target.style.filter = 'brightness(1)' }}>
+            {showAdd ? <Icon ic={X} size={14} /> : <><Icon ic={Plus} size={14} /> Novo</>}
           </button>
         </div>
       </div>
 
-      <div style={{ padding:'1rem' }}>
+      <div style={{ padding:'1.25rem' }}>
         {showAdd && <PersonForm data={addData} onChange={setAddData} onSave={saveAdd} onCancel={() => setShowAdd(false)} type={type} isNew />}
 
         {people.length === 0 && !showAdd && (
@@ -789,7 +794,7 @@ function PeopleSection({ title, subtitle, type, people, onAdd, onUpdate, onDelet
           </div>
         )}
 
-        <div style={{ display:'flex', flexDirection:'column', gap:'.6rem' }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:'.85rem' }}>
           {people.map(p => {
             if (deletingId===p.id) return (
               <div key={p.id} style={{ background:'#FCEBEB', border:'0.5px solid #F7C1C1', borderRadius:14, padding:'.9rem 1rem', display:'flex', alignItems:'center', gap:12 }}>
@@ -827,22 +832,22 @@ function AreasSection({ areas, onAdd, onUpdate, onDelete }) {
   }
 
   return (
-    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, boxShadow:'0 1px 3px rgba(0,0,0,0.05)', overflow:'hidden', flex:1, minWidth:0 }}>
-      <div style={{ padding:'1rem 1.25rem', background: BRAND+'18', borderBottom:`0.5px solid ${BRAND}40`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', overflow:'hidden', flex:1, minWidth:0 }}>
+      <div style={{ padding:'1.25rem 1.5rem', background: BRAND+'1A', borderBottom:`0.5px solid ${BRAND}45`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
           <div style={{ fontSize:15, fontWeight:600, color: BRAND }}>Áreas da Empresa</div>
           <div style={{ fontSize:11, color:'#888', marginTop:2 }}>Configure as áreas para exibição nos processos</div>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <span style={{ fontSize:12, fontWeight:600, color: BRAND, background: BRAND+'1A', padding:'3px 10px', borderRadius:99 }}>{areas.length}</span>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <span style={{ fontSize:12, fontWeight:700, color: BRAND, background: BRAND+'22', padding:'5px 14px', borderRadius:99 }}>{areas.length}</span>
           <button onClick={() => { setShowAdd(s=>!s); setEditingId(null); setDeletingId(null) }}
-            style={{ fontSize:12, padding:'6px 13px', border:`0.5px solid ${BRAND}`, borderRadius:8, cursor:'pointer', background: showAdd ? '#f0f0f0' : BRAND, color: showAdd ? '#555' : '#fff', fontWeight:500 }}>
-            {showAdd ? <Icon ic={X} size={13} /> : <><Icon ic={Plus} size={12} /> Nova</>}
+            style={{ fontSize:12, padding:'7px 16px', border:`0.5px solid ${BRAND}`, borderRadius:8, cursor:'pointer', background: showAdd ? '#f0f0f0' : BRAND, color: showAdd ? '#555' : '#fff', fontWeight:600, boxShadow: !showAdd ? `0 4px 15px ${BRAND}4d` : 'none', transition:'all 0.2s ease' }} onMouseOver={e => { if (!showAdd) e.target.style.filter = 'brightness(0.90)' }} onMouseOut={e => { e.target.style.filter = 'brightness(1)' }}>
+            {showAdd ? <Icon ic={X} size={14} /> : <><Icon ic={Plus} size={14} /> Nova</>}
           </button>
         </div>
       </div>
 
-      <div style={{ padding:'1rem' }}>
+      <div style={{ padding:'1.25rem' }}>
         {showAdd && <AreaForm data={addData} onChange={setAddData} onSave={saveAdd} onCancel={() => setShowAdd(false)} isNew />}
 
         {areas.length === 0 && !showAdd && (
@@ -851,7 +856,7 @@ function AreasSection({ areas, onAdd, onUpdate, onDelete }) {
           </div>
         )}
 
-        <div style={{ display:'flex', flexDirection:'column', gap:'.6rem' }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:'.85rem' }}>
           {areas.map(a => {
             if (deletingId===a.id) return (
               <div key={a.id} style={{ background:'#FCEBEB', border:'0.5px solid #F7C1C1', borderRadius:14, padding:'.9rem 1rem', display:'flex', alignItems:'center', gap:12 }}>
@@ -899,17 +904,17 @@ function SolicitacoesPendentes() {
   const outros    = list.filter(x => x.status !== 'pendente')
 
   return (
-    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, boxShadow:'0 1px 3px rgba(0,0,0,0.05)', overflow:'hidden', marginBottom:'1.25rem' }}>
-      <div style={{ padding:'1rem 1.25rem', background:ACCENT_LT, borderBottom:`0.5px solid ${ACCENT}40`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', overflow:'hidden', marginBottom:'1.5rem' }}>
+      <div style={{ padding:'1.25rem 1.5rem', background:ACCENT_LT, borderBottom:`0.5px solid ${ACCENT}45`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
-          <div style={{ fontSize:15, fontWeight:600, color:'#7A5F10' }}>Solicitações Pendentes</div>
+          <div style={{ fontSize:16, fontWeight:700, color:'#7A5F10' }}>Solicitações Pendentes</div>
           <div style={{ fontSize:11, color:'#888', marginTop:2 }}>Aprovar ou rejeitar novos cadastros</div>
         </div>
         {pendentes.length > 0 && (
-          <span style={{ fontSize:12, fontWeight:700, color:'#fff', background:'#E24B4A', padding:'3px 10px', borderRadius:99 }}>{pendentes.length}</span>
+          <span style={{ fontSize:12, fontWeight:700, color:'#fff', background:'#E24B4A', padding:'5px 14px', borderRadius:99, boxShadow:'0 4px 15px rgba(226, 75, 74, 0.4)' }}>{pendentes.length}</span>
         )}
       </div>
-      <div style={{ padding:'1rem' }}>
+      <div style={{ padding:'1.25rem' }}>
         {pendentes.length === 0 && outros.length === 0 && (
           <div style={{ textAlign:'center', padding:'1.5rem', fontSize:12, color:'#bbb' }}>Nenhuma solicitação ainda.</div>
         )}
@@ -974,15 +979,15 @@ function GerarConvites() {
   }
 
   return (
-    <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, boxShadow:'0 1px 3px rgba(0,0,0,0.05)', overflow:'hidden', marginBottom:'1.25rem' }}>
-      <div style={{ padding:'1rem 1.25rem', background:BRAND_LIGHT, borderBottom:`0.5px solid ${BRAND_BRD}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+    <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', overflow:'hidden', marginBottom:'1.5rem' }}>
+      <div style={{ padding:'1.25rem 1.5rem', background:BRAND_LIGHT, borderBottom:`0.5px solid ${BRAND_BRD}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
-          <div style={{ fontSize:15, fontWeight:600, color:BRAND }}>Gerar Link de Convite</div>
+          <div style={{ fontSize:16, fontWeight:700, color:BRAND }}>Gerar Link de Convite</div>
           <div style={{ fontSize:11, color:'#888', marginTop:2 }}>Convide usuários com perfil pré-definido</div>
         </div>
       </div>
-      <div style={{ padding:'1rem' }}>
-        <div style={{ display:'flex', gap:8, marginBottom:'1rem', alignItems:'flex-end' }}>
+      <div style={{ padding:'1.25rem' }}>
+        <div style={{ display:'flex', gap:9, marginBottom:'1.25rem', alignItems:'flex-end' }}>
           <div style={{ flex:1 }}>
             <label style={labelSt}>Função do convidado</label>
             <select style={{ ...inputSt, cursor:'pointer' }} value={roleInv} onChange={e => setRoleInv(e.target.value)}>
@@ -991,8 +996,8 @@ function GerarConvites() {
               <option value="colaborador">Colaborador</option>
             </select>
           </div>
-          <button onClick={gerarLink} style={{ fontSize:12, padding:'7px 16px', borderRadius:8, border:`0.5px solid ${BRAND}`, background:BRAND, color:'#fff', cursor:'pointer', fontWeight:500, whiteSpace:'nowrap' }}>
-            <Icon ic={Link} size={13} /> Gerar Link
+          <button onClick={gerarLink} style={{ fontSize:12, padding:'9px 18px', borderRadius:8, border:`0.5px solid ${BRAND}`, background:BRAND, color:'#fff', cursor:'pointer', fontWeight:600, whiteSpace:'nowrap', boxShadow:`0 4px 15px ${BRAND}4d`, transition:'all 0.2s ease' }} onMouseOver={e => { e.target.style.filter = 'brightness(0.90)' }} onMouseOut={e => { e.target.style.filter = 'brightness(1)' }}>
+            <Icon ic={Link} size={16} /> Gerar Link
           </button>
         </div>
 
@@ -1025,7 +1030,7 @@ function Configuracoes({ colaboradores, consultores, areas, onColabAdd, onColabU
   const isCoord = user?.role === 'coordenador'
   return (
     <div>
-      <div style={{ fontSize:26, fontWeight:700, color:'#111', marginBottom:'.2rem' }}>Configurações</div>
+      <div style={{ fontSize:28, fontWeight:800, color:'#111', marginBottom:'.3rem' }}>Configurações</div>
       <div style={{ fontSize:13, color:'#999', marginBottom:'1.5rem' }}>Gerencie os participantes e consultores do projeto DF Turismo</div>
 
       {isCoord && <SolicitacoesPendentes />}
@@ -1033,7 +1038,7 @@ function Configuracoes({ colaboradores, consultores, areas, onColabAdd, onColabU
 
       {isCoord && <AreasSection areas={areas} onAdd={onAreaAdd} onUpdate={onAreaUpdate} onDelete={onAreaDelete} />}
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1.25rem', alignItems:'start', marginTop: isCoord ? '1.25rem' : 0 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1.5rem', alignItems:'start', marginTop: isCoord ? '1.5rem' : 0 }}>
         <PeopleSection
           title="Colaboradores / Atores"
           subtitle="Participantes da coleta de processos"
@@ -1323,13 +1328,13 @@ function Agenda({ user, meetings, colaboradores, onAdd, onUpdate, onDelete, onTo
   return (
     <div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'.2rem' }}>
-        <div style={{ fontSize:26, fontWeight:700, color:'#111' }}>Agenda</div>
+        <div style={{ fontSize:28, fontWeight:800, color:'#111' }}>Agenda</div>
         <button onClick={() => openNew()} style={{
-          fontSize:12, padding:'6px 14px', borderRadius:7, fontWeight:500, cursor:'pointer',
-          border:`0.5px solid ${BRAND}`, background:BRAND, color:'#fff',
-        }}><Icon ic={Plus} size={18} /> Novo evento</button>
+          fontSize:12, padding:'9px 18px', borderRadius:8, fontWeight:600, cursor:'pointer',
+          border:`0.5px solid ${BRAND}`, background:BRAND, color:'#fff', boxShadow:`0 4px 15px ${BRAND}4d`, transition:'all 0.2s ease'
+        }} onMouseOver={e => { e.target.style.filter = 'brightness(0.90)' }} onMouseOut={e => { e.target.style.filter = 'brightness(1)' }}><Icon ic={Plus} size={20} /> Novo evento</button>
       </div>
-      <div style={{ fontSize:13, color:'#999', marginBottom:'1rem' }}>
+      <div style={{ fontSize:13, color:'#999', marginBottom:'1.5rem' }}>
         {upcoming.length} reunião(ões) futura(s)
         {canceled.length>0 && <span style={{ marginLeft:10, color:'#A32D2D' }}>· {canceled.length} cancelada(s)</span>}
       </div>
@@ -1393,12 +1398,12 @@ function DashboardSocio({ processes, areas, colaboradores, consultores }) {
 
   return (
     <div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: '#111', marginBottom: '.2rem' }}>Dashboard Sócio</div>
+      <div style={{ fontSize: 28, fontWeight: 800, color: '#111', marginBottom: '.3rem' }}>Dashboard Sócio</div>
       <div style={{ fontSize: 13, color: '#999', marginBottom: '1.5rem' }}>Acompanhamento de processos por área e estágio</div>
 
       {/* Filtros */}
-      <div style={{ background: '#fff', border: '0.5px solid #e2e8e4', borderRadius: 14, padding: '1rem 1.2rem', marginBottom: '1.25rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+      <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: '0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius: 14, padding: '1.5rem', marginBottom: '1.5rem', boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
           <div>
             <label style={labelSt}>Filtrar por área</label>
             <ChipSelect values={selectedAreas} onChange={setSelectedAreas} options={areaOpts} allowFreeText={false} placeholder="Todas as áreas" />
@@ -1430,23 +1435,23 @@ function DashboardSocio({ processes, areas, colaboradores, consultores }) {
       </div>
 
       {/* Métricas */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.75rem', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
         {[
-          [`${total}`, 'Processos', BRAND, <Icon ic={FolderOpen} size={16} />],
-          [`${completed}/${total}`, 'Concluídos', completed === total && total > 0 ? BRAND_MID : ACCENT, <Icon ic={Check} size={16} />],
-          [`${avgPct}%`, 'Progresso médio', avgPct >= 70 ? BRAND_MID : ACCENT, <Icon ic={BarChart2} size={16} />],
+          [`${total}`, 'Processos', BRAND, <Icon ic={FolderOpen} size={40} />],
+          [`${completed}/${total}`, 'Concluídos', completed === total && total > 0 ? BRAND_MID : ACCENT, <Icon ic={Check} size={40} />],
+          [`${avgPct}%`, 'Progresso médio', avgPct >= 70 ? BRAND_MID : ACCENT, <Icon ic={BarChart2} size={40} />],
         ].map(([val, lbl, clr, ico]) => (
-          <div key={lbl} style={{ background: '#fff', border: '0.5px solid #e2e8e4', borderRadius: 14, padding: '.9rem 1rem', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 18, color: clr }}>{ico}</span>
-            <div><div style={{ fontSize: 18, fontWeight: 600, color: clr }}>{val}</div><div style={{ fontSize: 10, color: '#888', marginTop: 1 }}>{lbl}</div></div>
+          <div key={lbl} style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: '0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius: 14, padding: '1.25rem 1.25rem', display: 'flex', alignItems: 'center', gap: 16, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)' }}>
+            <span style={{ fontSize: 40, color: clr }}>{ico}</span>
+            <div><div style={{ fontSize: 22, fontWeight: 700, color: clr }}>{val}</div><div style={{ fontSize: 11, color: '#888', marginTop: 3 }}>{lbl}</div></div>
           </div>
         ))}
       </div>
 
       {/* Progresso por estágio */}
-      <div style={{ background: '#fff', border: '0.5px solid #e2e8e4', borderRadius: 14, padding: '1rem 1.2rem', marginBottom: '1.25rem' }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: '#111', marginBottom: '1rem' }}>Distribuição por estágio</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '.75rem' }}>
+      <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: '0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius: 14, padding: '1.5rem', marginBottom: '1.5rem', boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: '1.25rem' }}>Distribuição por estágio</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '1rem' }}>
           {STAGES.map(s => {
             const cnt = byStage[s.key] || 0
             const pct = total ? Math.round((cnt / total) * 100) : 0
@@ -1467,9 +1472,9 @@ function DashboardSocio({ processes, areas, colaboradores, consultores }) {
 
       {/* Distribuição por área */}
       {areas.length > 0 && (
-        <div style={{ background: '#fff', border: '0.5px solid #e2e8e4', borderRadius: 14, padding: '1rem 1.2rem', marginBottom: '1.25rem' }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: '#111', marginBottom: '1rem' }}>Distribuição por área</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '.75rem' }}>
+        <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: '0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius: 14, padding: '1.5rem', marginBottom: '1.5rem', boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)' }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: '1.25rem' }}>Distribuição por área</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '1rem' }}>
             {areas.map(a => {
               const cnt = byArea[a.nome] || 0
               const pct = total ? Math.round((cnt / total) * 100) : 0
@@ -1491,8 +1496,8 @@ function DashboardSocio({ processes, areas, colaboradores, consultores }) {
 
       {/* Tabela de processos filtrada */}
       {filtered.length > 0 && (
-        <div style={{ background: '#fff', border: '0.5px solid #e2e8e4', borderRadius: 14, overflow: 'hidden' }}>
-          <div style={{ padding: '.75rem 1rem', borderBottom: '0.5px solid #eee', fontSize: 13, fontWeight: 500, color: '#111' }}>Processos ({filtered.length})</div>
+        <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: '0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius: 14, overflow: 'hidden', boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)' }}>
+          <div style={{ padding: '1rem 1.25rem', borderBottom: '0.5px solid #eee', fontSize: 14, fontWeight: 700, color: '#111' }}>Processos ({filtered.length})</div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
@@ -1537,7 +1542,7 @@ function DashboardSocio({ processes, areas, colaboradores, consultores }) {
       )}
 
       {filtered.length === 0 && (
-        <div style={{ background: '#fff', border: '0.5px solid #e2e8e4', borderRadius: 14, padding: '2rem', textAlign: 'center', color: '#bbb', fontSize: 12 }}>
+        <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border: '0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius: 14, padding: '2.5rem 2rem', textAlign: 'center', color: '#bbb', fontSize: 12, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)' }}>
           Nenhum processo encontrado com os filtros aplicados.
         </div>
       )}
@@ -1555,34 +1560,34 @@ function Dashboard({ meetings, processes }) {
   const avgPct   = total ? Math.round(processes.map(getPct).reduce((a,b)=>a+b,0)/total) : 0
   return (
     <div>
-      <div style={{ fontSize:26, fontWeight:700, color:'#111', marginBottom:'.2rem' }}>Dashboard</div>
-      <div style={{ fontSize:13, color:'#999', marginBottom:'1.25rem' }}>Visão geral do projeto DF Turismo</div>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:'.75rem', marginBottom:'1.25rem' }}>
+      <div style={{ fontSize:28, fontWeight:800, color:'#111', marginBottom:'.3rem' }}>Dashboard</div>
+      <div style={{ fontSize:13, color:'#999', marginBottom:'1.5rem' }}>Visão geral do projeto DF Turismo</div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:'1rem', marginBottom:'1.5rem' }}>
         {[
           ['Sprint 04','Mapeamento Core',BRAND,'📌'],
           [`${avgPct}%`,`${done}/${total} processos concluídos`, avgPct>=70?BRAND_MID:ACCENT,'🗂'],
-          [`${meetings.filter(m=>!m.canceled).length}`,'Reuniões confirmadas','#2D8A6F',<><Icon ic={CheckCircle} size={20} /></>],
-          [canceled.length||'0', canceled.length?`${canceled.length} cancelada(s)`:'Nenhuma cancelada', canceled.length?'#A32D2D':'#888',<><Icon ic={AlertTriangle} size={20} /></>],
+          [`${meetings.filter(m=>!m.canceled).length}`,'Reuniões confirmadas','#2D8A6F',<><Icon ic={CheckCircle} size={40} /></>],
+          [canceled.length||'0', canceled.length?`${canceled.length} cancelada(s)`:'Nenhuma cancelada', canceled.length?'#A32D2D':'#888',<><Icon ic={AlertTriangle} size={40} /></>],
         ].map(([val,lbl,clr,ico]) => (
-          <div key={lbl} style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, padding:'.9rem 1rem', display:'flex', alignItems:'center', gap:12, boxShadow:'0 1px 3px rgba(0,0,0,0.05)', animation:'slideInUp 0.4s ease-out' }}>
-            <span style={{ fontSize:24 }}>{ico}</span>
-            <div><div style={{ fontSize:20, fontWeight:600, color:clr }}>{val}</div><div style={{ fontSize:10, color:'#888', marginTop:1 }}>{lbl}</div></div>
+          <div key={lbl} style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, padding:'1.25rem', display:'flex', alignItems:'center', gap:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', animation:'slideInUp 0.4s ease-out' }}>
+            <span style={{ fontSize:40 }}>{ico}</span>
+            <div><div style={{ fontSize:22, fontWeight:700, color:clr }}>{val}</div><div style={{ fontSize:11, color:'#888', marginTop:3 }}>{lbl}</div></div>
           </div>
         ))}
       </div>
-      <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, padding:'.9rem 1.1rem', marginBottom:'1.25rem', boxShadow:'0 1px 3px rgba(0,0,0,0.05)' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
-          <span style={{ fontSize:12, fontWeight:500, color:'#555' }}>Progresso geral dos processos</span>
-          <span style={{ fontSize:13, fontWeight:600, color: avgPct>=70?BRAND_MID:ACCENT }}>{avgPct}%</span>
+      <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, padding:'1.5rem', marginBottom:'1.5rem', boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
+          <span style={{ fontSize:13, fontWeight:600, color:'#555' }}>Progresso geral dos processos</span>
+          <span style={{ fontSize:14, fontWeight:700, color: avgPct>=70?BRAND_MID:ACCENT }}>{avgPct}%</span>
         </div>
-        <div style={{ height:8, background:'#eee', borderRadius:99, overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div style={{ height:10, background:'#eee', borderRadius:99, overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,0.1)' }}>
           <div style={{ height:'100%', width:`${avgPct}%`, background: avgPct>=70?BRAND_MID:ACCENT, borderRadius:99, transition:'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }} />
         </div>
       </div>
-      <div style={{ background:'#fff', border:'0.5px solid #e2e8e4', borderRadius:14, boxShadow:'0 1px 3px rgba(0,0,0,0.05)', overflow:'hidden' }}>
-        <div style={{ padding:'.75rem 1rem', borderBottom:'0.5px solid #eee', fontSize:13, fontWeight:500, color:'#111' }}>📅 Próximas reuniões</div>
+      <div style={{ background:'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(235,244,239,0.85) 100%)', border:'0.5px solid #e2e8e4', borderTop:'3px solid #163828', borderRadius:14, boxShadow:'0 4px 15px rgba(22, 56, 40, 0.15)', overflow:'hidden' }}>
+        <div style={{ padding:'1rem 1.25rem', borderBottom:'0.5px solid #eee', fontSize:14, fontWeight:700, color:'#111' }}>📅 Próximas reuniões</div>
         {upcoming.length===0
-          ? <div style={{ padding:'1.5rem', textAlign:'center', fontSize:12, color:'#bbb' }}>Nenhuma reunião futura agendada</div>
+          ? <div style={{ padding:'2rem', textAlign:'center', fontSize:12, color:'#bbb' }}>Nenhuma reunião futura agendada</div>
           : upcoming.map(m => {
             const c  = EV_COLORS[(m.ci??0)%5]
             const dt = fromYMD(m.date)
@@ -2277,6 +2282,22 @@ function Levantamento({ consultores, colaboradores, areas, onAdd, onGoProcessos 
 export default function App() {
   const { theme } = useTheme()
   const colors = themes[theme]
+
+  // Apply theme to document
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        document.body.style.backgroundColor = '#0f0f0f'
+        document.body.style.color = '#f0f0f0'
+      } else {
+        document.documentElement.removeAttribute('data-theme')
+        document.body.style.backgroundColor = '#f0f2f0'
+        document.body.style.color = '#111'
+      }
+    }
+  }, [theme])
+
   const [user,         setUser        ] = useState(() => {
     try { const s = localStorage.getItem('pcUser'); return s ? JSON.parse(s) : null } catch { return null }
   })
@@ -2465,9 +2486,9 @@ export default function App() {
   }
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:colors.background }}>
+    <div style={{ display:'flex', minHeight:'100vh', backgroundImage: colors.backgroundGradient, backgroundColor: colors.background }}>
       <Sidebar tab={tab} setTab={setTab} user={user} onLogout={handleLogout} onTabChange={handleTabChange} />
-      <main style={{ flex:1, padding:'1.5rem', overflowY:'auto', minWidth:0, opacity: fadeOut ? 0 : 1, transition: 'opacity 0.3s ease-in-out', background:colors.background, color:colors.text }}>
+      <main style={{ flex:1, padding:'1.5rem', overflowY:'auto', minWidth:0, opacity: fadeOut ? 0 : 1, transition: 'opacity 0.3s ease-in-out', backgroundColor:'transparent', color:colors.text }}>
         {tab==='dashboard' && user?.role === 'socio' && (
           <DashboardSocio processes={processes} areas={areas} colaboradores={colaboradores} consultores={consultores} />
         )}
