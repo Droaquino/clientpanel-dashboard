@@ -40,3 +40,15 @@ body[data-theme="dark"] {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .dashboard-grid-2 { grid-template-columns: 1fr !important; }
+  .dashboard-grid-3 { grid-template-columns: 1fr 1fr !important; }
+  .stage-grid-2     { grid-template-columns: 1fr !important; }
+  .proc-actions     { flex-wrap: wrap !important; }
+}
+
+@media (max-width: 480px) {
+  .dashboard-grid-3 { grid-template-columns: 1fr !important; }
+}

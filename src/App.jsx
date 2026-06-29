@@ -158,12 +158,13 @@ function CadastroScreen({ onBack, inviteToken }) {
     setLoading(false)
   }
 
+  const colors = themes[theme]
   if (success) return (
     <div style={{ minHeight:'100vh', background:`linear-gradient(135deg, ${BRAND} 0%, ${BRAND_MID} 100%)`, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}>
-      <div style={{ background:'#fff', borderRadius:18, padding:'2rem', width:400, maxWidth:'95vw', textAlign:'center', boxShadow:'0 16px 60px rgba(0,0,0,.25)' }}>
+      <div style={{ background: colors.modalBg, borderRadius:18, padding:'2rem', width:400, maxWidth:'95vw', textAlign:'center', boxShadow:'0 16px 60px rgba(0,0,0,.35)' }}>
         <div style={{ fontSize:40, marginBottom:12 }}><Icon ic={CheckCircle} size={40} style={{color: BRAND}} /></div>
         <div style={{ fontSize:16, fontWeight:600, color:BRAND, marginBottom:8 }}>Solicitação enviada!</div>
-        <div style={{ fontSize:13, color: theme === 'dark' ? '#d0d0d0' : '#555', marginBottom:'1.5rem' }}>Aguarde a aprovação do coordenador.</div>
+        <div style={{ fontSize:13, color: colors.textSecondary, marginBottom:'1.5rem' }}>Aguarde a aprovação do coordenador.</div>
         <button onClick={onBack} style={{ fontSize:13, padding:'8px 20px', borderRadius:8, border:`0.5px solid ${BRAND}`, background:BRAND, color:'#fff', cursor:'pointer' }}>Voltar ao login</button>
       </div>
     </div>
@@ -171,12 +172,12 @@ function CadastroScreen({ onBack, inviteToken }) {
 
   return (
     <div style={{ minHeight:'100vh', background:`linear-gradient(135deg, ${BRAND} 0%, ${BRAND_MID} 100%)`, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}>
-      <div style={{ background:'#fff', borderRadius:18, padding:'2rem', width:440, maxWidth:'95vw', maxHeight:'92vh', overflowY:'auto', boxShadow:'0 16px 60px rgba(0,0,0,.25)' }}>
+      <div style={{ background: colors.modalBg, borderRadius:18, padding:'2rem', width:440, maxWidth:'95vw', maxHeight:'92vh', overflowY:'auto', boxShadow:'0 16px 60px rgba(0,0,0,.35)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:'1.5rem' }}>
-          <button onClick={onBack} style={{ border:'none', background:'none', fontSize:18, cursor:'pointer', color: theme === 'dark' ? '#a0a0a0' : '#999', lineHeight:1, padding:0 }}><Icon ic={ArrowLeft} size={18} /></button>
+          <button onClick={onBack} style={{ border:'none', background:'none', fontSize:18, cursor:'pointer', color: colors.textTertiary, lineHeight:1, padding:0 }}><Icon ic={ArrowLeft} size={18} /></button>
           <div>
             <div style={{ fontSize:16, fontWeight:600, color:BRAND }}>Solicitar Cadastro</div>
-            <div style={{ fontSize:11, color: theme === 'dark' ? '#b0b0b0' : '#888' }}>Preencha os dados para solicitar acesso</div>
+            <div style={{ fontSize:11, color: colors.textTertiary }}>Preencha os dados para solicitar acesso</div>
           </div>
         </div>
 
@@ -205,9 +206,9 @@ function CadastroScreen({ onBack, inviteToken }) {
             {[['gestao','Grupo Gestão'],['cliente','Cliente']].map(([g,l]) => (
               <button key={g} onClick={() => !lockedRole && handleGrupo(g)} style={{
                 padding:'10px', borderRadius:9, fontSize:12, fontWeight:500, cursor: lockedRole ? 'default' : 'pointer',
-                border: `1.5px solid ${grupo===g ? BRAND : '#ddd'}`,
-                background: grupo===g ? BRAND_LIGHT : '#fafafa',
-                color: grupo===g ? BRAND : '#666',
+                border: `1.5px solid ${grupo===g ? BRAND : colors.border}`,
+                background: grupo===g ? BRAND_LIGHT : colors.cardBg,
+                color: grupo===g ? BRAND : colors.textSecondary,
                 opacity: lockedRole && grupo!==g ? .5 : 1,
               }}>{l}</button>
             ))}
@@ -319,22 +320,23 @@ function LoginScreen({ onLogin, onCadastro }) {
 
   const gestaoUsers = USERS.filter(x => x.grupo === 'gestao')
 
+  const colors = themes[theme]
   return (
     <div style={{ minHeight:'100vh', background:`linear-gradient(135deg, ${BRAND} 0%, ${BRAND_MID} 100%)`, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}>
-      <div style={{ background:'#fff', borderRadius:18, padding:'2rem', width:380, maxWidth:'95vw', boxShadow:'0 16px 60px rgba(0,0,0,.25)' }}>
+      <div style={{ background: colors.modalBg, borderRadius:18, padding:'2rem', width:380, maxWidth:'95vw', boxShadow:'0 16px 60px rgba(0,0,0,.35)' }}>
         {/* Logo */}
         <div style={{ textAlign:'center', marginBottom:'1.5rem' }}>
           <div style={{ width:52, height:52, borderRadius:14, background:BRAND, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, color:'#fff', margin:'0 auto 10px' }}><Icon ic={LayoutGrid} size={24} /></div>
-          <div style={{ fontSize:17, fontWeight:600, color:BRAND }}>Painel de Controle</div>
-          <div style={{ fontSize:12, color: theme === 'dark' ? '#b0b0b0' : '#888', marginTop:2 }}>DF Turismo</div>
+          <div style={{ fontSize:17, fontWeight:600, color: colors.text }}>Painel de Controle</div>
+          <div style={{ fontSize:12, color: colors.textTertiary, marginTop:2 }}>DF Turismo</div>
         </div>
 
         {/* Section tabs */}
-        <div style={{ display:'flex', border:`0.5px solid ${BRAND_BRD}`, borderRadius:9, overflow:'hidden', marginBottom:'1.25rem' }}>
+        <div style={{ display:'flex', border:`0.5px solid ${colors.border}`, borderRadius:9, overflow:'hidden', marginBottom:'1.25rem' }}>
           {[['gestao','Grupo Gestão'],['cliente','Acesso Cliente']].map(([s,l]) => (
             <button key={s} onClick={() => { setSection(s); setErr('') }} style={{
               flex:1, padding:'8px', fontSize:12, border:'none', cursor:'pointer', fontWeight: section===s ? 500 : 400,
-              background: section===s ? BRAND : '#fff', color: section===s ? '#fff' : '#555',
+              background: section===s ? BRAND : colors.cardBg, color: section===s ? '#fff' : colors.textSecondary,
             }}>{l}</button>
           ))}
         </div>
@@ -382,8 +384,8 @@ function LoginScreen({ onLogin, onCadastro }) {
           background: loading ? '#999' : BRAND, color:'#fff', border:'none', cursor: loading ? 'wait' : 'pointer',
         }}>{loading ? 'Verificando...' : 'Entrar'}</button>
 
-        <div style={{ textAlign:'center', marginTop:'1rem', paddingTop:'1rem', borderTop: `0.5px solid ${theme === 'dark' ? '#222' : '#eee'}` }}>
-          <span style={{ fontSize:11, color: theme === 'dark' ? '#b0b0b0' : '#888' }}>Não tem acesso? </span>
+        <div style={{ textAlign:'center', marginTop:'1rem', paddingTop:'1rem', borderTop: `0.5px solid ${colors.border}` }}>
+          <span style={{ fontSize:11, color: colors.textTertiary }}>Não tem acesso? </span>
           <button onClick={onCadastro} style={{ fontSize:11, color:BRAND_MID, background:'none', border:'none', cursor:'pointer', fontWeight:500, textDecoration:'underline', padding:0 }}>
             Solicitar cadastro
           </button>
@@ -474,11 +476,24 @@ function Sidebar({ tab, setTab, user, onLogout, onTabChange }) {
   const { theme, setTheme } = useTheme()
   const colors = themes[theme]
   const [collapsed, setCollapsed] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const role = user?.role || 'cliente'
+
+  useEffect(() => {
+    const handler = () => {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      if (!mobile) setMobileOpen(false)
+    }
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
 
   const handleTabClick = (newTab) => {
     if (onTabChange) onTabChange(newTab)
     else setTab(newTab)
+    if (isMobile) setMobileOpen(false)
   }
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light')
@@ -493,9 +508,20 @@ function Sidebar({ tab, setTab, user, onLogout, onTabChange }) {
   ]
   const items = allItems.filter(i => i.roles.includes(role))
   const initials = (user?.nome||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
-  const w = collapsed ? 60 : 220
+  const w = isMobile ? (mobileOpen ? 220 : 0) : (collapsed ? 60 : 220)
   return (
-    <nav style={{ width:w, flexShrink:0, background: theme === 'light' ? BRAND : colors.sidebarBg, backgroundImage: theme === 'light' ? `linear-gradient(180deg, #163828 0%, #0f2a1f 100%)` : colors.sidebarGradient, display:'flex', flexDirection:'column', transition:'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)', overflow:'hidden', position:'relative' }}>
+    <>
+      {/* Mobile hamburger button */}
+      {isMobile && (
+        <button onClick={() => setMobileOpen(o => !o)} style={{ position:'fixed', top:12, left:12, zIndex:200, width:38, height:38, borderRadius:10, border:'none', cursor:'pointer', background:BRAND, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 12px rgba(0,0,0,0.3)' }}>
+          <Icon ic={mobileOpen ? ChevronLeft : LayoutGrid} size={20} />
+        </button>
+      )}
+      {/* Mobile overlay backdrop */}
+      {isMobile && mobileOpen && (
+        <div onClick={() => setMobileOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:149 }} />
+      )}
+    <nav style={{ width:w, flexShrink:0, background: theme === 'light' ? BRAND : colors.sidebarBg, backgroundImage: theme === 'light' ? `linear-gradient(180deg, #163828 0%, #0f2a1f 100%)` : colors.sidebarGradient, display:'flex', flexDirection:'column', transition:'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)', overflow:'hidden', position: isMobile ? 'fixed' : 'relative', top:0, left:0, height: isMobile ? '100vh' : 'auto', zIndex: isMobile ? 150 : 'auto' }}>
       {/* Toggle separado — flutua sobre a borda direita */}
       <button
         onClick={() => setCollapsed(c => !c)}
@@ -563,6 +589,7 @@ function Sidebar({ tab, setTab, user, onLogout, onTabChange }) {
         )}
       </div>
     </nav>
+    </>
   )
 }
 
@@ -1456,7 +1483,7 @@ function DashboardSocio({ processes, areas, colaboradores, consultores }) {
       </div>
 
       {/* Métricas */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div className="dashboard-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
         {[
           [`${total}`, 'Processos', BRAND, <Icon ic={FolderOpen} size={40} />],
           [`${completed}/${total}`, 'Concluídos', completed === total && total > 0 ? BRAND_MID : ACCENT, <Icon ic={Check} size={40} />],
@@ -1472,7 +1499,7 @@ function DashboardSocio({ processes, areas, colaboradores, consultores }) {
       {/* Progresso por estágio */}
       <div style={{ background: colors.cardBg, backgroundImage: colors.cardGradient, border: `0.5px solid ${colors.border}`, borderTop:'3px solid #163828', borderRadius: 14, padding: '1.5rem', marginBottom: '1.5rem', boxShadow: theme==='dark' ? '0 2px 8px rgba(0,0,0,0.4)' : '0 4px 15px rgba(22,56,40,0.15)' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: colors.text, marginBottom: '1.25rem' }}>Distribuição por estágio</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '1rem' }}>
+        <div className="stage-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '1rem' }}>
           {STAGES.map(s => {
             const cnt = byStage[s.key] || 0
             const pct = total ? Math.round((cnt / total) * 100) : 0
@@ -1585,7 +1612,7 @@ function Dashboard({ meetings, processes }) {
     <div>
       <div style={{ fontSize:28, fontWeight:800, color: theme === 'dark' ? '#f0f0f0' : '#111', marginBottom:'.3rem' }}>Dashboard</div>
       <div style={{ fontSize:13, color: theme === 'dark' ? '#a0a0a0' : '#999', marginBottom:'1.5rem' }}>Visão geral do projeto DF Turismo</div>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:'1rem', marginBottom:'1.5rem' }}>
+      <div className="dashboard-grid-2" style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:'1rem', marginBottom:'1.5rem' }}>
         {[
           ['Sprint 04','Mapeamento Core',BRAND,'📌'],
           [`${avgPct}%`,`${done}/${total} processos concluídos`, avgPct>=70?BRAND_MID:ACCENT,'🗂'],
@@ -2522,7 +2549,7 @@ export default function App() {
   return (
     <div style={{ display:'flex', minHeight:'100vh', backgroundImage: colors.backgroundGradient, backgroundColor: colors.background }}>
       <Sidebar tab={tab} setTab={setTab} user={user} onLogout={handleLogout} onTabChange={handleTabChange} />
-      <main style={{ flex:1, padding:'1.5rem', overflowY:'auto', minWidth:0, opacity: fadeOut ? 0 : 1, transition: 'opacity 0.3s ease-in-out', backgroundColor:'transparent', color:colors.text, maxWidth:'calc(100vw - 60px)' }}>
+      <main style={{ flex:1, padding:'1.5rem', paddingTop: typeof window !== 'undefined' && window.innerWidth < 768 ? '4rem' : '1.5rem', overflowY:'auto', minWidth:0, opacity: fadeOut ? 0 : 1, transition: 'opacity 0.3s ease-in-out', backgroundColor:'transparent', color:colors.text }}>
         {!dataLoaded && (
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', height:'60vh', gap:16 }}>
             <div style={{ width:40, height:40, border:`3px solid ${colors.border}`, borderTop:`3px solid ${BRAND}`, borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
